@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { SPECIALIZATION_LABELS } from "@/lib/utils/constants";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
-import { createClient } from "@/lib/supabase/server";
+import { getUser } from "@/lib/supabase/server";
 
 // Demo dealer data
 const DEALERS: Record<string, {
@@ -103,8 +103,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function DealerPage({ params }: Props) {
   const { slug } = await params;
   const dealer = DEALERS[slug];
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getUser();
 
   if (!dealer) {
     return (

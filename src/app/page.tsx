@@ -5,15 +5,12 @@ import HeroSection from "@/components/home/HeroSection";
 import FeaturedDealers from "@/components/home/FeaturedDealers";
 import LatestNews from "@/components/home/LatestNews";
 import CountryLinks from "@/components/home/CountryLinks";
-import { createClient } from "@/lib/supabase/server";
+import { getUser } from "@/lib/supabase/server";
 
 export const revalidate = 300;
 
 export default async function HomePage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getUser();
 
   return (
     <div className="flex min-h-screen flex-col">
