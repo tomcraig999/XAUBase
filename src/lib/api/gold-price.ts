@@ -11,14 +11,42 @@ export interface GoldPriceData {
   timestamp: string;
 }
 
-// Primary: goldapi.io (requires API key, 100 req/month free)
-async function fetchFromGoldApiIo(currency: string): Promise<GoldPriceData | null> {
+// Primary: gold-api.com (free, no key required, returns USD price)
+async function fetchFromGoldApiCom(): Promise<GoldPriceData | null> {
+  try {
+    const res = await fetch(
+      "https://api.gold-api.com/price/XAU",
+      { next: { revalidate: 300 } }
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    const price = data.price || 0;
+    if (price === 0) return null;
+    return {
+      price,
+      currency: "USD",
+      change_24h: 0,
+      change_pct: 0,
+      price_gram_24k: price / 31.1035,
+      price_gram_22k: (price / 31.1035) * (22 / 24),
+      open_price: price,
+      high_price: price,
+      low_price: price,
+      timestamp: data.updatedAt || new Date().toISOString(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+// Secondary: goldapi.io (requires API key, 100 req/month free)
+async function fetchFromGoldApiIo(): Promise<GoldPriceData | null> {
   const apiKey = process.env.GOLDAPI_IO_API_KEY;
   if (!apiKey) return null;
 
   try {
     const res = await fetch(
-      `https://www.goldapi.io/api/XAU/${currency}`,
+      "https://www.goldapi.io/api/XAU/USD",
       {
         headers: { "x-access-token": apiKey },
         next: { revalidate: 300 },
@@ -28,7 +56,7 @@ async function fetchFromGoldApiIo(currency: string): Promise<GoldPriceData | nul
     const data = await res.json();
     return {
       price: data.price,
-      currency: data.currency,
+      currency: "USD",
       change_24h: data.ch || 0,
       change_pct: data.chp || 0,
       price_gram_24k: data.price_gram_24k || data.price / 31.1035,
@@ -43,85 +71,55 @@ async function fetchFromGoldApiIo(currency: string): Promise<GoldPriceData | nul
   }
 }
 
-// Secondary: gold-api.com (free, no key required)
-async function fetchFromGoldApiCom(currency: string): Promise<GoldPriceData | null> {
+// Fetch gold price in USD from available APIs
+export async function fetchGoldPrice(): Promise<GoldPriceData | null> {
+  // Try free API first (no key required), then paid fallback
+  const goldApiCom = await fetchFromGoldApiCom();
+  if (goldApiCom) return goldApiCom;
+
+  const goldApiIo = await fetchFromGoldApiIo();
+  if (goldApiIo) return goldApiIo;
+
+  return null;
+}
+
+// Fetch FX rates from free API for multi-currency conversion
+export async function fetchFxRates(): Promise<Record<string, number> | null> {
   try {
     const res = await fetch(
-      `https://api.gold-api.com/price/XAU${currency}`,
-      { next: { revalidate: 300 } }
+      "https://open.er-api.com/v6/latest/USD",
+      { next: { revalidate: 3600 } }
     );
     if (!res.ok) return null;
     const data = await res.json();
-    const price = data.price || 0;
-    if (price === 0) return null;
-    return {
-      price,
-      currency,
-      change_24h: data.ch || 0,
-      change_pct: data.chp || 0,
-      price_gram_24k: price / 31.1035,
-      price_gram_22k: (price / 31.1035) * (22 / 24),
-      open_price: data.open || price,
-      high_price: data.high || price,
-      low_price: data.low || price,
-      timestamp: new Date().toISOString(),
-    };
+    if (data.result !== "success") return null;
+    return data.rates as Record<string, number>;
   } catch {
     return null;
   }
 }
 
-// Tertiary: metals.dev (free tier, no key for basic)
-async function fetchFromMetalsDev(currency: string): Promise<GoldPriceData | null> {
-  try {
-    const apiKey = process.env.METALS_DEV_API_KEY || "";
-    const url = apiKey
-      ? `https://api.metals.dev/v1/latest?api_key=${apiKey}&currency=${currency}&unit=toz`
-      : `https://api.metals.dev/v1/latest?currency=${currency}&unit=toz`;
-    const res = await fetch(url, { next: { revalidate: 300 } });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const price = data?.metals?.gold || 0;
-    if (price === 0) return null;
-    return {
-      price,
-      currency,
-      change_24h: 0,
-      change_pct: 0,
-      price_gram_24k: price / 31.1035,
-      price_gram_22k: (price / 31.1035) * (22 / 24),
-      open_price: price,
-      high_price: price,
-      low_price: price,
-      timestamp: new Date().toISOString(),
-    };
-  } catch {
-    return null;
-  }
-}
+// Fallback FX rates if API is unavailable
+const FALLBACK_FX_RATES: Record<string, number> = {
+  USD: 1, EUR: 0.917, GBP: 0.789, CAD: 1.36, AUD: 1.53,
+  CHF: 0.877, JPY: 149.5, INR: 83.1, SGD: 1.34, AED: 3.67, ZAR: 18.5,
+};
 
-export async function fetchGoldPrice(currency = "USD"): Promise<GoldPriceData | null> {
-  // Try APIs in order of reliability
-  const goldApiIo = await fetchFromGoldApiIo(currency);
-  if (goldApiIo) return goldApiIo;
-
-  const goldApiCom = await fetchFromGoldApiCom(currency);
-  if (goldApiCom) return goldApiCom;
-
-  const metalsDev = await fetchFromMetalsDev(currency);
-  if (metalsDev) return metalsDev;
-
-  return null;
+// Convert USD gold price to another currency
+export function convertGoldPrice(
+  usdPrice: GoldPriceData,
+  currency: string,
+  fxRates: Record<string, number> | null
+): number {
+  if (currency === "USD") return usdPrice.price;
+  const rate = fxRates?.[currency] || FALLBACK_FX_RATES[currency] || 1;
+  return Math.round(usdPrice.price * rate * 100) / 100;
 }
 
 // Generate demo data when APIs are not configured
 export function getDemoGoldPrice(currency = "USD"): GoldPriceData {
   const basePrice = 2650.30;
-  const rates: Record<string, number> = {
-    USD: 1, EUR: 0.917, GBP: 0.789, CAD: 1.36, AUD: 1.53,
-    CHF: 0.877, JPY: 149.5, INR: 83.1, SGD: 1.34, AED: 3.67, ZAR: 18.5,
-  };
-  const rate = rates[currency] || 1;
+  const rate = FALLBACK_FX_RATES[currency] || 1;
   const price = basePrice * rate;
 
   return {

@@ -1,27 +1,25 @@
 import { NextResponse } from "next/server";
-import { getDemoGoldPrice, fetchGoldPrice } from "@/lib/api/gold-price";
+import { getDemoGoldPrice, fetchGoldPrice, fetchFxRates, convertGoldPrice } from "@/lib/api/gold-price";
 import { CURRENCIES } from "@/lib/utils/constants";
 
 export const revalidate = 60;
 
 export async function GET() {
   try {
-    // Try fetching real price for USD
-    const usdPrice = await fetchGoldPrice("USD");
+    // Fetch real gold price in USD and FX rates in parallel
+    const [usdPrice, fxRates] = await Promise.all([
+      fetchGoldPrice(),
+      fetchFxRates(),
+    ]);
+
     const current = usdPrice || getDemoGoldPrice("USD");
     const isLive = !!usdPrice;
 
-    // Get prices in other currencies
+    // Convert gold price to all currencies using FX rates
     const currencies: Record<string, number> = {};
     for (const curr of CURRENCIES) {
-      if (curr.code === "USD") {
-        currencies[curr.code] = current.price;
-        continue;
-      }
       if (isLive) {
-        // Try fetching real price for each currency
-        const realPrice = await fetchGoldPrice(curr.code);
-        currencies[curr.code] = realPrice ? realPrice.price : getDemoGoldPrice(curr.code).price;
+        currencies[curr.code] = convertGoldPrice(current, curr.code, fxRates);
       } else {
         currencies[curr.code] = getDemoGoldPrice(curr.code).price;
       }
