@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Clock, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { formatTimeAgo } from "@/lib/utils/format";
-import { getDemoNews } from "@/lib/api/rss";
+import { fetchAllNews, getDemoNews } from "@/lib/api/rss";
 
 export const metadata: Metadata = {
   title: "Gold News",
@@ -20,12 +20,19 @@ const CATEGORIES = [
   { value: "investing", label: "Investing" },
 ];
 
-export default function NewsPage({
+export default async function NewsPage({
   searchParams,
 }: {
   searchParams: Promise<{ category?: string }>;
 }) {
-  const news = getDemoNews();
+  // Fetch real news from RSS feeds, fall back to demo data
+  let news = await fetchAllNews();
+  if (news.length === 0) {
+    news = getDemoNews();
+  }
+
+  // Sort by date (newest first)
+  news.sort((a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime());
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">

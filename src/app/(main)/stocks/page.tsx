@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { formatCurrency, formatPercent } from "@/lib/utils/format";
-import { getDemoStockQuote } from "@/lib/api/finnhub";
+import { fetchStockQuote, getDemoStockQuote } from "@/lib/api/finnhub";
 import { STOCK_CATEGORIES } from "@/lib/utils/constants";
 
 export const metadata: Metadata = {
@@ -44,15 +44,37 @@ const STOCKS_DATA = [
   { symbol: "SGOL", name: "Aberdeen Physical Gold", exchange: "NYSE", category: "etf", production: "N/A" },
 ];
 
-export default function StocksPage({
+async function getStockQuotes() {
+  const hasFinnhub = !!process.env.FINNHUB_API_KEY;
+  const result = [];
+
+  for (let i = 0; i < STOCKS_DATA.length; i++) {
+    const stock = STOCKS_DATA[i];
+    let quote = null;
+
+    if (hasFinnhub) {
+      quote = await fetchStockQuote(stock.symbol);
+      // Rate limit: 60 calls/min on Finnhub free tier
+      if (i < STOCKS_DATA.length - 1) {
+        await new Promise((r) => setTimeout(r, 100));
+      }
+    }
+
+    result.push({
+      ...stock,
+      quote: quote || getDemoStockQuote(stock.symbol, stock.name),
+    });
+  }
+
+  return result;
+}
+
+export default async function StocksPage({
   searchParams,
 }: {
   searchParams: Promise<{ category?: string }>;
 }) {
-  const stocks = STOCKS_DATA.map((stock) => ({
-    ...stock,
-    quote: getDemoStockQuote(stock.symbol, stock.name),
-  }));
+  const stocks = await getStockQuotes();
 
   // Group by category
   const grouped = STOCK_CATEGORIES.map((cat) => ({

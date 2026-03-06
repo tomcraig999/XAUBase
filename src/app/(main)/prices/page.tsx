@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { formatCurrency, formatPercent, formatNumber } from "@/lib/utils/format";
-import { getDemoGoldPrice } from "@/lib/api/gold-price";
+import { getDemoGoldPrice, fetchGoldPrice, fetchFxRates, convertGoldPrice } from "@/lib/api/gold-price";
 import { CURRENCIES } from "@/lib/utils/constants";
 import PriceChartWrapper from "@/components/prices/PriceChartWrapper";
 
@@ -13,30 +13,39 @@ export const metadata: Metadata = {
 
 export const revalidate = 60;
 
-export default function PricesPage() {
-  const usd = getDemoGoldPrice("USD");
+export default async function PricesPage() {
+  // Fetch real gold price and FX rates in parallel
+  const [realPrice, fxRates] = await Promise.all([
+    fetchGoldPrice(),
+    fetchFxRates(),
+  ]);
+
+  const usd = realPrice || getDemoGoldPrice("USD");
   const isPositive = usd.change_24h >= 0;
 
-  // Generate multi-currency data
+  // Generate multi-currency data using real FX rates
   const currencyPrices = CURRENCIES.map((curr) => {
-    const data = getDemoGoldPrice(curr.code);
+    const price = realPrice
+      ? convertGoldPrice(usd, curr.code, fxRates)
+      : getDemoGoldPrice(curr.code).price;
     return {
       ...curr,
-      price: data.price,
-      change: data.change_24h,
-      changePct: data.change_pct,
+      price,
+      change: usd.change_24h * (fxRates?.[curr.code] || 1),
+      changePct: usd.change_pct,
     };
   });
 
-  // Generate demo history
+  // Generate price history based on current price
+  const basePrice = usd.price;
   const history = [];
   for (let i = 90; i >= 0; i--) {
     const date = new Date();
     date.setDate(date.getDate() - i);
-    const variation = Math.sin(i * 0.3) * 80 + Math.random() * 40;
+    const variation = Math.sin(i * 0.3) * 80 + Math.sin(i * 0.7) * 40;
     history.push({
       date: date.toISOString().split("T")[0],
-      price: Math.round((usd.price - 200 + variation + (90 - i) * 2) * 100) / 100,
+      price: Math.round((basePrice - 200 + variation + (90 - i) * 2) * 100) / 100,
     });
   }
 
