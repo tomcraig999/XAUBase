@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { SITE_NAME } from "@/lib/utils/constants";
+import Logo from "@/components/ui/Logo";
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -38,14 +39,9 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm">
         <div className="text-center">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-gold-500 font-bold text-dark-900">
-              Au
-            </div>
-            <span className="font-display text-2xl font-bold text-gold-400">
-              {SITE_NAME}
-            </span>
-          </Link>
+          <div className="flex justify-center">
+            <Logo size="lg" linkTo="/" />
+          </div>
           <h1 className="mt-6 text-xl font-semibold text-foreground">Sign in to your account</h1>
         </div>
 

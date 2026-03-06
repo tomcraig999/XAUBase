@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Menu, X, ChevronDown, User, LogOut } from "lucide-react";
-import { NAV_LINKS, SITE_NAME } from "@/lib/utils/constants";
+import { NAV_LINKS } from "@/lib/utils/constants";
+import Logo from "@/components/ui/Logo";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 
@@ -26,14 +27,7 @@ export default function Header({ user }: HeaderProps) {
     <header className="sticky top-0 z-50 border-b border-border bg-dark-900/95 backdrop-blur-sm">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-gold-500 font-bold text-dark-900 text-sm">
-            Au
-          </div>
-          <span className="font-display text-xl font-bold text-gold-400">
-            {SITE_NAME}
-          </span>
-        </Link>
+        <Logo size="sm" />
 
         {/* Desktop Nav */}
         <nav className="hidden items-center gap-1 md:flex">

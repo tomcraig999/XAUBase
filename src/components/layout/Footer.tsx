@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SITE_NAME } from "@/lib/utils/constants";
+import Logo from "@/components/ui/Logo";
 
 export default function Footer() {
   return (
@@ -40,9 +40,10 @@ export default function Footer() {
             </ul>
           </div>
         </div>
-        <div className="mt-10 border-t border-border pt-6">
+        <div className="mt-10 border-t border-border pt-6 flex flex-col items-center gap-4">
+          <Logo size="sm" linkTo="/" />
           <p className="text-center text-xs text-dark-400">
-            &copy; {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
+            &copy; {new Date().getFullYear()} XAUBase. All rights reserved.
             Gold prices are delayed and provided for informational purposes only. Not financial advice.
           </p>
         </div>
