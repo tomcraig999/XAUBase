@@ -9,6 +9,7 @@ export async function GET() {
     // Try fetching real price for USD
     const usdPrice = await fetchGoldPrice("USD");
     const current = usdPrice || getDemoGoldPrice("USD");
+    const isLive = !!usdPrice;
 
     // Get prices in other currencies
     const currencies: Record<string, number> = {};
@@ -17,20 +18,27 @@ export async function GET() {
         currencies[curr.code] = current.price;
         continue;
       }
-      const data = getDemoGoldPrice(curr.code);
-      currencies[curr.code] = data.price;
+      if (isLive) {
+        // Try fetching real price for each currency
+        const realPrice = await fetchGoldPrice(curr.code);
+        currencies[curr.code] = realPrice ? realPrice.price : getDemoGoldPrice(curr.code).price;
+      } else {
+        currencies[curr.code] = getDemoGoldPrice(curr.code).price;
+      }
     }
 
-    // Generate demo history (30 days)
+    // Generate price history (30 days) based on current real price
     const history = [];
     const basePrice = current.price;
     for (let i = 30; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      const variation = (Math.sin(i * 0.5) * 50) + (Math.random() - 0.5) * 30;
+      // Simulate realistic price movement from current price
+      const trend = (30 - i) * (current.change_24h > 0 ? 1.5 : -1.5);
+      const noise = (Math.sin(i * 0.7) * 30) + (Math.sin(i * 1.3) * 15);
       history.push({
         date: date.toISOString().split("T")[0],
-        price: Math.round((basePrice - 100 + variation + (30 - i) * 3) * 100) / 100,
+        price: Math.round((basePrice - 80 + trend + noise) * 100) / 100,
       });
     }
 
@@ -48,6 +56,7 @@ export async function GET() {
       },
       currencies,
       history,
+      live: isLive,
     });
   } catch {
     // Return demo data on any error
@@ -56,6 +65,7 @@ export async function GET() {
       current: demo,
       currencies: { USD: demo.price },
       history: [],
+      live: false,
     });
   }
 }

@@ -11,15 +11,16 @@ export interface GoldPriceData {
   timestamp: string;
 }
 
-// Primary: gold-api.com (free, no auth, no rate limits)
-async function fetchFromGoldApi(currency: string): Promise<GoldPriceData | null> {
+// Primary: goldapi.io (requires API key, 100 req/month free)
+async function fetchFromGoldApiIo(currency: string): Promise<GoldPriceData | null> {
+  const apiKey = process.env.GOLDAPI_IO_API_KEY;
+  if (!apiKey) return null;
+
   try {
     const res = await fetch(
       `https://www.goldapi.io/api/XAU/${currency}`,
       {
-        headers: {
-          "x-access-token": process.env.GOLDAPI_IO_API_KEY || "",
-        },
+        headers: { "x-access-token": apiKey },
         next: { revalidate: 300 },
       }
     );
@@ -42,8 +43,8 @@ async function fetchFromGoldApi(currency: string): Promise<GoldPriceData | null>
   }
 }
 
-// Fallback: fetch from a free metals API
-async function fetchFromMetalsApi(currency: string): Promise<GoldPriceData | null> {
+// Secondary: gold-api.com (free, no key required)
+async function fetchFromGoldApiCom(currency: string): Promise<GoldPriceData | null> {
   try {
     const res = await fetch(
       `https://api.gold-api.com/price/XAU${currency}`,
@@ -52,6 +53,7 @@ async function fetchFromMetalsApi(currency: string): Promise<GoldPriceData | nul
     if (!res.ok) return null;
     const data = await res.json();
     const price = data.price || 0;
+    if (price === 0) return null;
     return {
       price,
       currency,
@@ -69,13 +71,47 @@ async function fetchFromMetalsApi(currency: string): Promise<GoldPriceData | nul
   }
 }
 
-export async function fetchGoldPrice(currency = "USD"): Promise<GoldPriceData | null> {
-  // Try primary API first
-  const data = await fetchFromGoldApi(currency);
-  if (data) return data;
+// Tertiary: metals.dev (free tier, no key for basic)
+async function fetchFromMetalsDev(currency: string): Promise<GoldPriceData | null> {
+  try {
+    const apiKey = process.env.METALS_DEV_API_KEY || "";
+    const url = apiKey
+      ? `https://api.metals.dev/v1/latest?api_key=${apiKey}&currency=${currency}&unit=toz`
+      : `https://api.metals.dev/v1/latest?currency=${currency}&unit=toz`;
+    const res = await fetch(url, { next: { revalidate: 300 } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const price = data?.metals?.gold || 0;
+    if (price === 0) return null;
+    return {
+      price,
+      currency,
+      change_24h: 0,
+      change_pct: 0,
+      price_gram_24k: price / 31.1035,
+      price_gram_22k: (price / 31.1035) * (22 / 24),
+      open_price: price,
+      high_price: price,
+      low_price: price,
+      timestamp: new Date().toISOString(),
+    };
+  } catch {
+    return null;
+  }
+}
 
-  // Fallback
-  return fetchFromMetalsApi(currency);
+export async function fetchGoldPrice(currency = "USD"): Promise<GoldPriceData | null> {
+  // Try APIs in order of reliability
+  const goldApiIo = await fetchFromGoldApiIo(currency);
+  if (goldApiIo) return goldApiIo;
+
+  const goldApiCom = await fetchFromGoldApiCom(currency);
+  if (goldApiCom) return goldApiCom;
+
+  const metalsDev = await fetchFromMetalsDev(currency);
+  if (metalsDev) return metalsDev;
+
+  return null;
 }
 
 // Generate demo data when APIs are not configured

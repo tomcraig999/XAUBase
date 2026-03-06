@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDemoStockQuote } from "@/lib/api/finnhub";
+import { fetchStockQuote, getDemoStockQuote } from "@/lib/api/finnhub";
 
 export const revalidate = 300;
 
@@ -45,17 +45,46 @@ export async function GET(request: NextRequest) {
     stocks = stocks.filter((s) => s.category === category);
   }
 
-  const result = stocks.map((stock) => {
-    const quote = getDemoStockQuote(stock.symbol, stock.name);
-    return {
-      ...stock,
-      price: quote.current,
-      change: quote.change,
-      changePercent: quote.changePercent,
-      high: quote.high,
-      low: quote.low,
-    };
-  });
+  // Check if Finnhub API key is configured
+  const hasFinnhub = !!process.env.FINNHUB_API_KEY;
 
-  return NextResponse.json({ stocks: result });
+  // Fetch real quotes with rate-limited batching, fall back to demo
+  const result = [];
+  for (let i = 0; i < stocks.length; i++) {
+    const stock = stocks[i];
+    let quote = null;
+
+    if (hasFinnhub) {
+      quote = await fetchStockQuote(stock.symbol);
+      // Rate limit: 60 calls/min = 1 per second, use 100ms delay
+      if (i < stocks.length - 1) {
+        await new Promise((r) => setTimeout(r, 100));
+      }
+    }
+
+    if (quote) {
+      result.push({
+        ...stock,
+        price: quote.current,
+        change: quote.change,
+        changePercent: quote.changePercent,
+        high: quote.high,
+        low: quote.low,
+        live: true,
+      });
+    } else {
+      const demo = getDemoStockQuote(stock.symbol, stock.name);
+      result.push({
+        ...stock,
+        price: demo.current,
+        change: demo.change,
+        changePercent: demo.changePercent,
+        high: demo.high,
+        low: demo.low,
+        live: false,
+      });
+    }
+  }
+
+  return NextResponse.json({ stocks: result, live: hasFinnhub });
 }
