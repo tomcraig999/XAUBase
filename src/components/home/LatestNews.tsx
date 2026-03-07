@@ -2,10 +2,14 @@ import Link from "next/link";
 import { Clock } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { formatTimeAgo } from "@/lib/utils/format";
-import { getDemoNews } from "@/lib/api/rss";
+import { fetchAllNews, getDemoNews } from "@/lib/api/rss";
 
-export default function LatestNews() {
-  const news = getDemoNews().slice(0, 4);
+export default async function LatestNews() {
+  let news = await fetchAllNews();
+  if (news.length === 0) {
+    news = getDemoNews();
+  }
+  news = news.slice(0, 4);
 
   return (
     <section className="border-t border-border py-16">
@@ -29,9 +33,12 @@ export default function LatestNews() {
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           {news.map((item, i) => (
-            <article
+            <a
               key={i}
-              className="rounded-lg border border-border bg-card p-5 transition-colors hover:bg-card-hover"
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block rounded-lg border border-border bg-card p-5 transition-colors hover:bg-card-hover"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
@@ -53,7 +60,7 @@ export default function LatestNews() {
                   </div>
                 </div>
               </div>
-            </article>
+            </a>
           ))}
         </div>
       </div>
