@@ -2,88 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft, Globe, MapPin, Phone, Mail, Star, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import { SPECIALIZATION_LABELS } from "@/lib/utils/constants";
+import { SPECIALIZATION_LABELS, SITE_URL } from "@/lib/utils/constants";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { getUser } from "@/lib/supabase/server";
-
-// Demo dealer data
-const DEALERS: Record<string, {
-  name: string;
-  country: string;
-  countrySlug: string;
-  city: string;
-  description: string;
-  website: string;
-  phone: string;
-  email: string;
-  specializations: string[];
-  online: boolean;
-  rating: number;
-  reviews: number;
-  address: string;
-}> = {
-  "apmex": {
-    name: "APMEX",
-    country: "United States",
-    countrySlug: "united-states",
-    city: "Oklahoma City",
-    description: "APMEX (American Precious Metals Exchange) is one of the largest online precious metals retailers in the United States. Founded in 2000, they offer a wide selection of gold, silver, platinum, and palladium products including coins, bars, and rounds from mints worldwide. They are an authorized purchaser of the US Mint and Royal Canadian Mint.",
-    website: "https://apmex.com",
-    phone: "+1-800-375-9006",
-    email: "support@apmex.com",
-    specializations: ["bullion", "coins", "bars", "numismatics", "ira", "online"],
-    online: true,
-    rating: 4.8,
-    reviews: 245,
-    address: "226 Dean A. McGee Ave, Oklahoma City, OK 73102, USA",
-  },
-  "bullionvault": {
-    name: "BullionVault",
-    country: "United Kingdom",
-    countrySlug: "united-kingdom",
-    city: "London",
-    description: "BullionVault is the world's largest online investment gold service, with over $4 billion of gold, silver, platinum, and palladium securely stored for over 100,000 users. They offer peer-to-peer trading and professional-grade vault storage in London, Zurich, New York, Toronto, and Singapore.",
-    website: "https://bullionvault.com",
-    phone: "+44-20-8600-0130",
-    email: "support@bullionvault.com",
-    specializations: ["bullion", "storage", "online"],
-    online: true,
-    rating: 4.7,
-    reviews: 189,
-    address: "Landmark House, Blacks Road, London W6 9DT, UK",
-  },
-  "perth-mint": {
-    name: "Perth Mint",
-    country: "Australia",
-    countrySlug: "australia",
-    city: "Perth",
-    description: "The Perth Mint is the official bullion mint of Australia and one of the oldest mints in the world, operating since 1899. Government-owned by the State of Western Australia, it produces a wide range of bullion coins and bars, including the iconic Australian Kangaroo and Lunar series. The Perth Mint also offers allocated and unallocated storage programs.",
-    website: "https://perthmint.com",
-    phone: "+61-8-9421-7222",
-    email: "info@perthmint.com",
-    specializations: ["bullion", "coins", "bars", "storage", "refining"],
-    online: true,
-    rating: 4.9,
-    reviews: 312,
-    address: "310 Hay Street, East Perth WA 6004, Australia",
-  },
-  "bullionstar": {
-    name: "BullionStar",
-    country: "Singapore",
-    countrySlug: "singapore",
-    city: "Singapore",
-    description: "BullionStar is Singapore's premier precious metals dealer, having facilitated over $2 billion in transactions. They operate a showroom and vault in central Singapore, offering gold, silver, and platinum products with transparent pricing and allocated storage options. Singapore exempts investment-grade precious metals from GST.",
-    website: "https://bullionstar.com",
-    phone: "+65-6100-3040",
-    email: "support@bullionstar.com",
-    specializations: ["bullion", "coins", "bars", "storage", "online"],
-    online: true,
-    rating: 4.8,
-    reviews: 156,
-    address: "45 New Bridge Road, Singapore 059398",
-  },
-};
+import { getDealerBySlug } from "@/lib/supabase/queries";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -91,19 +14,30 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const dealer = DEALERS[slug];
+  const dealer = await getDealerBySlug(slug);
   if (!dealer) return { title: "Dealer Not Found" };
 
+  const cityName = dealer.city?.name || "";
+  const countryName = dealer.country?.name || "";
+  const location = [cityName, countryName].filter(Boolean).join(", ");
+
   return {
-    title: `${dealer.name} - Gold Dealer in ${dealer.city}, ${dealer.country}`,
-    description: dealer.description.slice(0, 160),
+    title: `${dealer.name} - Gold Dealer in ${location}`,
+    description: dealer.description?.slice(0, 160) || `${dealer.name} is a trusted gold dealer in ${location}. Buy gold coins, bullion bars, and precious metals.`,
+    alternates: {
+      canonical: `${SITE_URL}/dealer/${slug}`,
+    },
   };
 }
 
+export const revalidate = 3600;
+
 export default async function DealerPage({ params }: Props) {
   const { slug } = await params;
-  const dealer = DEALERS[slug];
-  const user = await getUser();
+  const [dealer, user] = await Promise.all([
+    getDealerBySlug(slug),
+    getUser(),
+  ]);
 
   if (!dealer) {
     return (
@@ -112,7 +46,7 @@ export default async function DealerPage({ params }: Props) {
         <main className="flex-1">
           <div className="mx-auto max-w-7xl px-4 py-16 text-center">
             <h1 className="text-2xl font-bold text-foreground">Dealer Not Found</h1>
-            <Link href="/dealers" className="mt-4 inline-block text-gold-500">← Back to Directory</Link>
+            <Link href="/dealers" className="mt-4 inline-block text-gold-500">&larr; Back to Directory</Link>
           </div>
         </main>
         <Footer />
@@ -120,17 +54,59 @@ export default async function DealerPage({ params }: Props) {
     );
   }
 
+  const cityName = dealer.city?.name || "";
+  const stateProv = dealer.city?.state_province || "";
+  const countryName = dealer.country?.name || "";
+  const countrySlug = dealer.country?.slug || "";
+  const location = [cityName, stateProv, countryName].filter(Boolean).join(", ");
+
+  // JSON-LD
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+          { "@type": "ListItem", position: 2, name: "Gold Dealers", item: `${SITE_URL}/dealers` },
+          ...(countrySlug ? [{ "@type": "ListItem", position: 3, name: countryName, item: `${SITE_URL}/dealers/${countrySlug}` }] : []),
+          { "@type": "ListItem", position: countrySlug ? 4 : 3, name: dealer.name, item: `${SITE_URL}/dealer/${slug}` },
+        ],
+      },
+      {
+        "@type": "LocalBusiness",
+        name: dealer.name,
+        ...(dealer.description && { description: dealer.description }),
+        ...(dealer.address_line && { address: dealer.address_line }),
+        ...(dealer.phone && { telephone: dealer.phone }),
+        ...(dealer.website && { url: dealer.website }),
+        ...(dealer.rating_avg > 0 && {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: dealer.rating_avg,
+            reviewCount: dealer.review_count,
+          },
+        }),
+      },
+    ],
+  };
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header user={user ? { id: user.id, email: user.email } : null} />
       <main className="flex-1">
         <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          />
+
           <Link
-            href={`/dealers/${dealer.countrySlug}`}
+            href={countrySlug ? `/dealers/${countrySlug}` : "/dealers"}
             className="mb-6 inline-flex items-center gap-1 text-sm text-dark-400 hover:text-gold-400"
           >
             <ArrowLeft className="h-4 w-4" />
-            {dealer.country} Dealers
+            {countryName ? `${countryName} Dealers` : "All Dealers"}
           </Link>
 
           {/* Dealer Header */}
@@ -143,9 +119,9 @@ export default async function DealerPage({ params }: Props) {
                 <div className="mt-2 flex items-center gap-4 text-sm text-dark-400">
                   <span className="flex items-center gap-1">
                     <MapPin className="h-4 w-4" />
-                    {dealer.city}, {dealer.country}
+                    {location}
                   </span>
-                  {dealer.online && (
+                  {dealer.online_sales && (
                     <span className="flex items-center gap-1 text-gold-500">
                       <Globe className="h-4 w-4" />
                       Online Sales
@@ -154,8 +130,8 @@ export default async function DealerPage({ params }: Props) {
                 </div>
                 <div className="mt-2 flex items-center gap-1">
                   <Star className="h-4 w-4 fill-gold-400 text-gold-400" />
-                  <span className="font-medium text-gold-400">{dealer.rating}</span>
-                  <span className="text-dark-400">({dealer.reviews} reviews)</span>
+                  <span className="font-medium text-gold-400">{dealer.rating_avg}</span>
+                  <span className="text-dark-400">({dealer.review_count} reviews)</span>
                 </div>
               </div>
               {dealer.website && (
@@ -181,19 +157,21 @@ export default async function DealerPage({ params }: Props) {
           </div>
 
           {/* Description */}
-          <div className="mt-6 rounded-lg border border-border bg-card p-6">
-            <h2 className="text-lg font-semibold text-foreground">About</h2>
-            <p className="mt-3 leading-relaxed text-dark-300">{dealer.description}</p>
-          </div>
+          {dealer.description && (
+            <div className="mt-6 rounded-lg border border-border bg-card p-6">
+              <h2 className="text-lg font-semibold text-foreground">About</h2>
+              <p className="mt-3 leading-relaxed text-dark-300">{dealer.description}</p>
+            </div>
+          )}
 
           {/* Contact Info */}
           <div className="mt-6 rounded-lg border border-border bg-card p-6">
             <h2 className="text-lg font-semibold text-foreground">Contact Information</h2>
             <div className="mt-4 space-y-3">
-              {dealer.address && (
+              {dealer.address_line && (
                 <div className="flex items-start gap-3 text-sm">
                   <MapPin className="mt-0.5 h-4 w-4 text-dark-400" />
-                  <span className="text-dark-300">{dealer.address}</span>
+                  <span className="text-dark-300">{dealer.address_line}</span>
                 </div>
               )}
               {dealer.phone && (
