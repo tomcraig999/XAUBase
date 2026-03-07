@@ -84,6 +84,19 @@ const TOP_AUSTRALIA_CITIES = [
   { name: "Darwin", slug: "darwin" },
 ];
 
+// European countries with 2 cities each
+const EUROPE_CITIES: Record<string, { label: string; cities: { name: string; slug: string }[] }> = {
+  ireland: { label: "Irish", cities: [{ name: "Dublin", slug: "dublin" }, { name: "Cork", slug: "cork" }] },
+  france: { label: "French", cities: [{ name: "Paris", slug: "paris" }, { name: "Marseille", slug: "marseille" }] },
+  germany: { label: "German", cities: [{ name: "Berlin", slug: "berlin" }, { name: "Munich", slug: "munich" }] },
+  austria: { label: "Austrian", cities: [{ name: "Vienna", slug: "vienna" }, { name: "Graz", slug: "graz" }] },
+  spain: { label: "Spanish", cities: [{ name: "Madrid", slug: "madrid" }, { name: "Barcelona", slug: "barcelona" }] },
+  portugal: { label: "Portuguese", cities: [{ name: "Lisbon", slug: "lisbon" }, { name: "Porto", slug: "porto" }] },
+  switzerland: { label: "Swiss", cities: [{ name: "Zurich", slug: "zurich" }, { name: "Geneva", slug: "geneva" }] },
+  italy: { label: "Italian", cities: [{ name: "Rome", slug: "rome" }, { name: "Milan", slug: "milan" }] },
+  belgium: { label: "Belgian", cities: [{ name: "Brussels", slug: "brussels" }, { name: "Antwerp", slug: "antwerp" }] },
+};
+
 export default async function CityDealersPage({ params }: Props) {
   const { country, city } = await params;
   const data = await getDealersByCity(country, city);
@@ -346,6 +359,24 @@ export default async function CityDealersPage({ params }: Props) {
               <Link
                 key={c.slug}
                 href={`/dealers/australia/${c.slug}`}
+                className="rounded-full border border-border px-3 py-1.5 text-sm text-dark-300 transition-colors hover:border-gold-600 hover:text-gold-400"
+              >
+                {c.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+      {EUROPE_CITIES[country] && (
+        <div className="mt-12">
+          <h2 className="font-display text-xl font-bold text-foreground">
+            Browse Gold Dealers in Other {EUROPE_CITIES[country].label} Cities
+          </h2>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {EUROPE_CITIES[country].cities.filter((c) => c.slug !== city).map((c) => (
+              <Link
+                key={c.slug}
+                href={`/dealers/${country}/${c.slug}`}
                 className="rounded-full border border-border px-3 py-1.5 text-sm text-dark-300 transition-colors hover:border-gold-600 hover:text-gold-400"
               >
                 {c.name}
