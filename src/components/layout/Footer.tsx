@@ -5,7 +5,7 @@ export default function Footer() {
   return (
     <footer className="border-t border-border bg-dark-900">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-7">
           <div>
             <h3 className="text-sm font-semibold text-gold-400">Directory</h3>
             <ul className="mt-3 space-y-2">
@@ -34,6 +34,16 @@ export default function Footer() {
               <li><Link href="/dealers/united-kingdom/manchester" className="text-sm text-dark-300 hover:text-gold-400">Manchester</Link></li>
               <li><Link href="/dealers/united-kingdom/edinburgh" className="text-sm text-dark-300 hover:text-gold-400">Edinburgh</Link></li>
               <li><Link href="/dealers/united-kingdom/glasgow" className="text-sm text-dark-300 hover:text-gold-400">Glasgow</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-gold-400">Top Canada Cities</h3>
+            <ul className="mt-3 space-y-2">
+              <li><Link href="/dealers/canada/toronto" className="text-sm text-dark-300 hover:text-gold-400">Toronto</Link></li>
+              <li><Link href="/dealers/canada/vancouver" className="text-sm text-dark-300 hover:text-gold-400">Vancouver</Link></li>
+              <li><Link href="/dealers/canada/montreal" className="text-sm text-dark-300 hover:text-gold-400">Montreal</Link></li>
+              <li><Link href="/dealers/canada/calgary" className="text-sm text-dark-300 hover:text-gold-400">Calgary</Link></li>
+              <li><Link href="/dealers/canada/ottawa" className="text-sm text-dark-300 hover:text-gold-400">Ottawa</Link></li>
             </ul>
           </div>
           <div>

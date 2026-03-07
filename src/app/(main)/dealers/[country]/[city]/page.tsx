@@ -58,6 +58,19 @@ const TOP_UK_CITIES = [
   { name: "Newcastle", slug: "newcastle" },
 ];
 
+const TOP_CANADA_CITIES = [
+  { name: "Toronto", slug: "toronto" },
+  { name: "Montreal", slug: "montreal" },
+  { name: "Vancouver", slug: "vancouver" },
+  { name: "Calgary", slug: "calgary" },
+  { name: "Edmonton", slug: "edmonton" },
+  { name: "Ottawa", slug: "ottawa" },
+  { name: "Winnipeg", slug: "winnipeg" },
+  { name: "Quebec City", slug: "quebec-city" },
+  { name: "Hamilton", slug: "hamilton" },
+  { name: "Kitchener", slug: "kitchener" },
+];
+
 export default async function CityDealersPage({ params }: Props) {
   const { country, city } = await params;
   const data = await getDealersByCity(country, city);
@@ -284,6 +297,24 @@ export default async function CityDealersPage({ params }: Props) {
               <Link
                 key={c.slug}
                 href={`/dealers/united-kingdom/${c.slug}`}
+                className="rounded-full border border-border px-3 py-1.5 text-sm text-dark-300 transition-colors hover:border-gold-600 hover:text-gold-400"
+              >
+                {c.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+      {country === "canada" && (
+        <div className="mt-12">
+          <h2 className="font-display text-xl font-bold text-foreground">
+            Browse Gold Dealers in Other Canadian Cities
+          </h2>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {TOP_CANADA_CITIES.filter((c) => c.slug !== city).map((c) => (
+              <Link
+                key={c.slug}
+                href={`/dealers/canada/${c.slug}`}
                 className="rounded-full border border-border px-3 py-1.5 text-sm text-dark-300 transition-colors hover:border-gold-600 hover:text-gold-400"
               >
                 {c.name}
