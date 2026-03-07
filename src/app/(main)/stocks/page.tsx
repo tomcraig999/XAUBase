@@ -13,6 +13,11 @@ export const metadata: Metadata = {
 
 export const revalidate = 300;
 
+const INDICES_DATA = [
+  { symbol: "^XAU", name: "Philadelphia Gold & Silver Index", exchange: "PHLX", description: "Tracks 30 gold and silver mining companies" },
+  { symbol: "^HUI", name: "NYSE Arca Gold BUGS Index", exchange: "NYSE", description: "Tracks major gold producers that don't hedge beyond 1.5 years" },
+];
+
 const STOCKS_DATA = [
   // Senior Producers
   { symbol: "NEM", name: "Newmont Corporation", exchange: "NYSE", category: "senior_producer", production: "6,000 koz" },
@@ -44,6 +49,30 @@ const STOCKS_DATA = [
   { symbol: "SGOL", name: "Aberdeen Physical Gold", exchange: "NYSE", category: "etf", production: "N/A" },
 ];
 
+async function getIndexQuotes() {
+  const hasFinnhub = !!process.env.FINNHUB_API_KEY;
+  const result = [];
+
+  for (let i = 0; i < INDICES_DATA.length; i++) {
+    const index = INDICES_DATA[i];
+    let quote = null;
+
+    if (hasFinnhub) {
+      quote = await fetchStockQuote(index.symbol);
+      if (i < INDICES_DATA.length - 1) {
+        await new Promise((r) => setTimeout(r, 100));
+      }
+    }
+
+    result.push({
+      ...index,
+      quote: quote || getDemoStockQuote(index.symbol, index.name),
+    });
+  }
+
+  return result;
+}
+
 async function getStockQuotes() {
   const hasFinnhub = !!process.env.FINNHUB_API_KEY;
   const result = [];
@@ -74,7 +103,7 @@ export default async function StocksPage({
 }: {
   searchParams: Promise<{ category?: string }>;
 }) {
-  const stocks = await getStockQuotes();
+  const [indices, stocks] = await Promise.all([getIndexQuotes(), getStockQuotes()]);
 
   // Group by category
   const grouped = STOCK_CATEGORIES.map((cat) => ({
@@ -88,6 +117,52 @@ export default async function StocksPage({
       <p className="mt-2 text-dark-400">
         Track gold mining companies, streaming/royalty companies, and gold ETFs
       </p>
+
+      {/* Gold Indices */}
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold text-gold-400">Gold Indices</h2>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          {indices.map((index) => {
+            const positive = index.quote.change >= 0;
+            return (
+              <div
+                key={index.symbol}
+                className="rounded-lg border border-border bg-card p-5"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="rounded bg-dark-700 px-2 py-0.5 text-xs font-mono text-gold-400">
+                      {index.symbol.replace("^", "")}
+                    </span>
+                    <span className="ml-2 text-xs text-dark-400">{index.exchange}</span>
+                    <h3 className="mt-2 font-semibold text-foreground">{index.name}</h3>
+                    <p className="mt-1 text-xs text-dark-400">{index.description}</p>
+                  </div>
+                </div>
+                <div className="mt-4 flex items-end justify-between">
+                  <span className="text-2xl font-bold text-foreground">
+                    {formatCurrency(index.quote.current).replace("$", "")}
+                  </span>
+                  <div className={`flex items-center gap-2 ${positive ? "text-green-500" : "text-red-500"}`}>
+                    {positive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                    <span className="font-medium">
+                      {positive ? "+" : ""}{formatCurrency(index.quote.change).replace("$", "")}
+                    </span>
+                    <span className="text-sm">
+                      ({formatPercent(index.quote.changePercent)})
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-3 flex gap-4 text-xs text-dark-400">
+                  <span>High: {formatCurrency(index.quote.high).replace("$", "")}</span>
+                  <span>Low: {formatCurrency(index.quote.low).replace("$", "")}</span>
+                  <span>Open: {formatCurrency(index.quote.open).replace("$", "")}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {grouped.map((group) => (
         <div key={group.value} className="mt-8">

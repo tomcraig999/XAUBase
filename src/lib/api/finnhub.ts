@@ -39,18 +39,18 @@ export async function fetchStockQuote(symbol: string): Promise<StockQuote | null
     t: number;
   }>(`/quote?symbol=${encodeURIComponent(symbol)}`);
 
-  if (!data || data.c === 0) return null;
+  if (!data || !data.c) return null;
 
   return {
     symbol,
     current: data.c,
-    change: data.d,
-    changePercent: data.dp,
-    high: data.h,
-    low: data.l,
-    open: data.o,
-    previousClose: data.pc,
-    timestamp: data.t,
+    change: data.d ?? 0,
+    changePercent: data.dp ?? 0,
+    high: data.h ?? data.c,
+    low: data.l ?? data.c,
+    open: data.o ?? data.c,
+    previousClose: data.pc ?? data.c,
+    timestamp: data.t ?? Math.floor(Date.now() / 1000),
   };
 }
 
@@ -74,6 +74,7 @@ export async function fetchMultipleQuotes(
 // Demo data for when API key is not configured
 export function getDemoStockQuote(symbol: string, name: string): StockQuote {
   const prices: Record<string, number> = {
+    "^XAU": 186.42, "^HUI": 382.15,
     NEM: 45.82, GOLD: 19.34, AEM: 62.15, KGC: 7.45,
     GFI: 16.78, AU: 28.90, FNV: 142.50, WPM: 53.20,
     RGLD: 138.75, GDX: 35.40, GDXJ: 42.10, GLD: 245.80,
