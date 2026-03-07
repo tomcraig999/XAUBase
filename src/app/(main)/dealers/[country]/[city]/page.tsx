@@ -71,6 +71,19 @@ const TOP_CANADA_CITIES = [
   { name: "Kitchener", slug: "kitchener" },
 ];
 
+const TOP_AUSTRALIA_CITIES = [
+  { name: "Sydney", slug: "sydney" },
+  { name: "Melbourne", slug: "melbourne" },
+  { name: "Brisbane", slug: "brisbane" },
+  { name: "Perth", slug: "perth" },
+  { name: "Adelaide", slug: "adelaide" },
+  { name: "Gold Coast", slug: "gold-coast" },
+  { name: "Canberra", slug: "canberra" },
+  { name: "Newcastle", slug: "newcastle-au" },
+  { name: "Hobart", slug: "hobart" },
+  { name: "Darwin", slug: "darwin" },
+];
+
 export default async function CityDealersPage({ params }: Props) {
   const { country, city } = await params;
   const data = await getDealersByCity(country, city);
@@ -315,6 +328,24 @@ export default async function CityDealersPage({ params }: Props) {
               <Link
                 key={c.slug}
                 href={`/dealers/canada/${c.slug}`}
+                className="rounded-full border border-border px-3 py-1.5 text-sm text-dark-300 transition-colors hover:border-gold-600 hover:text-gold-400"
+              >
+                {c.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+      {country === "australia" && (
+        <div className="mt-12">
+          <h2 className="font-display text-xl font-bold text-foreground">
+            Browse Gold Dealers in Other Australian Cities
+          </h2>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {TOP_AUSTRALIA_CITIES.filter((c) => c.slug !== city).map((c) => (
+              <Link
+                key={c.slug}
+                href={`/dealers/australia/${c.slug}`}
                 className="rounded-full border border-border px-3 py-1.5 text-sm text-dark-300 transition-colors hover:border-gold-600 hover:text-gold-400"
               >
                 {c.name}
