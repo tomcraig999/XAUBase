@@ -5,7 +5,7 @@ export default function Footer() {
   return (
     <footer className="border-t border-border bg-dark-900">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-8 md:grid-cols-3 lg:grid-cols-6">
           <div>
             <h3 className="text-sm font-semibold text-gold-400">Directory</h3>
             <ul className="mt-3 space-y-2">
@@ -24,6 +24,16 @@ export default function Footer() {
               <li><Link href="/dealers/united-states/chicago" className="text-sm text-dark-300 hover:text-gold-400">Chicago</Link></li>
               <li><Link href="/dealers/united-states/houston" className="text-sm text-dark-300 hover:text-gold-400">Houston</Link></li>
               <li><Link href="/dealers/united-states/miami" className="text-sm text-dark-300 hover:text-gold-400">Miami</Link></li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-gold-400">Top UK Cities</h3>
+            <ul className="mt-3 space-y-2">
+              <li><Link href="/dealers/united-kingdom/london" className="text-sm text-dark-300 hover:text-gold-400">London</Link></li>
+              <li><Link href="/dealers/united-kingdom/birmingham" className="text-sm text-dark-300 hover:text-gold-400">Birmingham</Link></li>
+              <li><Link href="/dealers/united-kingdom/manchester" className="text-sm text-dark-300 hover:text-gold-400">Manchester</Link></li>
+              <li><Link href="/dealers/united-kingdom/edinburgh" className="text-sm text-dark-300 hover:text-gold-400">Edinburgh</Link></li>
+              <li><Link href="/dealers/united-kingdom/glasgow" className="text-sm text-dark-300 hover:text-gold-400">Glasgow</Link></li>
             </ul>
           </div>
           <div>

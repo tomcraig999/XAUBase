@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-// Top US cities for cross-linking
+// Top cities for cross-linking by country
 const TOP_US_CITIES = [
   { name: "New York", slug: "new-york" },
   { name: "Los Angeles", slug: "los-angeles" },
@@ -43,6 +43,19 @@ const TOP_US_CITIES = [
   { name: "Denver", slug: "denver" },
   { name: "Atlanta", slug: "atlanta" },
   { name: "Las Vegas", slug: "las-vegas" },
+];
+
+const TOP_UK_CITIES = [
+  { name: "London", slug: "london" },
+  { name: "Birmingham", slug: "birmingham" },
+  { name: "Manchester", slug: "manchester" },
+  { name: "Glasgow", slug: "glasgow" },
+  { name: "Leeds", slug: "leeds" },
+  { name: "Liverpool", slug: "liverpool" },
+  { name: "Edinburgh", slug: "edinburgh" },
+  { name: "Bristol", slug: "bristol" },
+  { name: "Sheffield", slug: "sheffield" },
+  { name: "Newcastle", slug: "newcastle" },
 ];
 
 export default async function CityDealersPage({ params }: Props) {
@@ -253,6 +266,24 @@ export default async function CityDealersPage({ params }: Props) {
               <Link
                 key={c.slug}
                 href={`/dealers/united-states/${c.slug}`}
+                className="rounded-full border border-border px-3 py-1.5 text-sm text-dark-300 transition-colors hover:border-gold-600 hover:text-gold-400"
+              >
+                {c.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+      {country === "united-kingdom" && (
+        <div className="mt-12">
+          <h2 className="font-display text-xl font-bold text-foreground">
+            Browse Gold Dealers in Other UK Cities
+          </h2>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {TOP_UK_CITIES.filter((c) => c.slug !== city).map((c) => (
+              <Link
+                key={c.slug}
+                href={`/dealers/united-kingdom/${c.slug}`}
                 className="rounded-full border border-border px-3 py-1.5 text-sm text-dark-300 transition-colors hover:border-gold-600 hover:text-gold-400"
               >
                 {c.name}
