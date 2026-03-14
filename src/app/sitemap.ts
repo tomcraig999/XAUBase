@@ -20,6 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "ireland", "france", "germany", "austria", "spain",
     "portugal", "switzerland", "italy", "belgium",
     "uae", "singapore", "hong-kong", "india", "south-africa",
+    "cayman-islands", "argentina", "brazil", "new-zealand", "thailand",
   ];
 
   const countryPages: MetadataRoute.Sitemap = countries.map((slug) => ({

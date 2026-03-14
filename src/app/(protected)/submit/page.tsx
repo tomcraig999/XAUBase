@@ -6,6 +6,7 @@ import { SPECIALIZATION_LABELS } from "@/lib/utils/constants";
 const COUNTRIES = [
   "United States", "United Kingdom", "Canada", "Australia", "Germany",
   "Switzerland", "UAE", "Singapore", "Hong Kong", "India", "South Africa",
+  "Cayman Islands", "Argentina", "Brazil", "New Zealand", "Thailand",
   "Other",
 ];
 

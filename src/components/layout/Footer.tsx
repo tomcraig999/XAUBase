@@ -14,6 +14,13 @@ export default function Footer() {
               <li><Link href="/dealers/united-kingdom" className="text-sm text-dark-300 hover:text-gold-400">UK Dealers</Link></li>
               <li><Link href="/dealers/canada" className="text-sm text-dark-300 hover:text-gold-400">Canada Dealers</Link></li>
               <li><Link href="/dealers/australia" className="text-sm text-dark-300 hover:text-gold-400">Australia Dealers</Link></li>
+              <li><Link href="/dealers/south-africa" className="text-sm text-dark-300 hover:text-gold-400">South Africa Dealers</Link></li>
+              <li><Link href="/dealers/new-zealand" className="text-sm text-dark-300 hover:text-gold-400">New Zealand Dealers</Link></li>
+              <li><Link href="/dealers/brazil" className="text-sm text-dark-300 hover:text-gold-400">Brazil Dealers</Link></li>
+              <li><Link href="/dealers/argentina" className="text-sm text-dark-300 hover:text-gold-400">Argentina Dealers</Link></li>
+              <li><Link href="/dealers/singapore" className="text-sm text-dark-300 hover:text-gold-400">Singapore Dealers</Link></li>
+              <li><Link href="/dealers/hong-kong" className="text-sm text-dark-300 hover:text-gold-400">Hong Kong Dealers</Link></li>
+              <li><Link href="/dealers/thailand" className="text-sm text-dark-300 hover:text-gold-400">Thailand Dealers</Link></li>
             </ul>
           </div>
           <div>

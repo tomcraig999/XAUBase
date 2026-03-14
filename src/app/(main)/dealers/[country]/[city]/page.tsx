@@ -84,6 +84,36 @@ const TOP_AUSTRALIA_CITIES = [
   { name: "Darwin", slug: "darwin" },
 ];
 
+const TOP_NEW_ZEALAND_CITIES = [
+  { name: "Auckland", slug: "auckland" },
+  { name: "Wellington", slug: "wellington" },
+  { name: "Christchurch", slug: "christchurch" },
+];
+
+const TOP_SOUTH_AFRICA_CITIES = [
+  { name: "Johannesburg", slug: "johannesburg" },
+  { name: "Cape Town", slug: "cape-town" },
+  { name: "Durban", slug: "durban" },
+  { name: "Pretoria", slug: "pretoria" },
+];
+
+const TOP_ARGENTINA_CITIES = [
+  { name: "Buenos Aires", slug: "buenos-aires" },
+  { name: "Córdoba", slug: "cordoba" },
+  { name: "Rosario", slug: "rosario" },
+];
+
+const TOP_THAILAND_CITIES = [
+  { name: "Bangkok", slug: "bangkok" },
+  { name: "Chiang Mai", slug: "chiang-mai" },
+];
+
+const TOP_BRAZIL_CITIES = [
+  { name: "São Paulo", slug: "sao-paulo" },
+  { name: "Rio de Janeiro", slug: "rio-de-janeiro" },
+  { name: "Brasília", slug: "brasilia" },
+];
+
 // European countries with 2 cities each
 const EUROPE_CITIES: Record<string, { label: string; cities: { name: string; slug: string }[] }> = {
   ireland: { label: "Irish", cities: [{ name: "Dublin", slug: "dublin" }, { name: "Cork", slug: "cork" }] },
@@ -359,6 +389,96 @@ export default async function CityDealersPage({ params }: Props) {
               <Link
                 key={c.slug}
                 href={`/dealers/australia/${c.slug}`}
+                className="rounded-full border border-border px-3 py-1.5 text-sm text-dark-300 transition-colors hover:border-gold-600 hover:text-gold-400"
+              >
+                {c.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+      {country === "new-zealand" && (
+        <div className="mt-12">
+          <h2 className="font-display text-xl font-bold text-foreground">
+            Browse Gold Dealers in Other New Zealand Cities
+          </h2>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {TOP_NEW_ZEALAND_CITIES.filter((c) => c.slug !== city).map((c) => (
+              <Link
+                key={c.slug}
+                href={`/dealers/new-zealand/${c.slug}`}
+                className="rounded-full border border-border px-3 py-1.5 text-sm text-dark-300 transition-colors hover:border-gold-600 hover:text-gold-400"
+              >
+                {c.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+      {country === "south-africa" && (
+        <div className="mt-12">
+          <h2 className="font-display text-xl font-bold text-foreground">
+            Browse Gold Dealers in Other South African Cities
+          </h2>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {TOP_SOUTH_AFRICA_CITIES.filter((c) => c.slug !== city).map((c) => (
+              <Link
+                key={c.slug}
+                href={`/dealers/south-africa/${c.slug}`}
+                className="rounded-full border border-border px-3 py-1.5 text-sm text-dark-300 transition-colors hover:border-gold-600 hover:text-gold-400"
+              >
+                {c.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+      {country === "argentina" && (
+        <div className="mt-12">
+          <h2 className="font-display text-xl font-bold text-foreground">
+            Browse Gold Dealers in Other Argentine Cities
+          </h2>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {TOP_ARGENTINA_CITIES.filter((c) => c.slug !== city).map((c) => (
+              <Link
+                key={c.slug}
+                href={`/dealers/argentina/${c.slug}`}
+                className="rounded-full border border-border px-3 py-1.5 text-sm text-dark-300 transition-colors hover:border-gold-600 hover:text-gold-400"
+              >
+                {c.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+      {country === "brazil" && (
+        <div className="mt-12">
+          <h2 className="font-display text-xl font-bold text-foreground">
+            Browse Gold Dealers in Other Brazilian Cities
+          </h2>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {TOP_BRAZIL_CITIES.filter((c) => c.slug !== city).map((c) => (
+              <Link
+                key={c.slug}
+                href={`/dealers/brazil/${c.slug}`}
+                className="rounded-full border border-border px-3 py-1.5 text-sm text-dark-300 transition-colors hover:border-gold-600 hover:text-gold-400"
+              >
+                {c.name}
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+      {country === "thailand" && (
+        <div className="mt-12">
+          <h2 className="font-display text-xl font-bold text-foreground">
+            Browse Gold Dealers in Other Thai Cities
+          </h2>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {TOP_THAILAND_CITIES.filter((c) => c.slug !== city).map((c) => (
+              <Link
+                key={c.slug}
+                href={`/dealers/thailand/${c.slug}`}
                 className="rounded-full border border-border px-3 py-1.5 text-sm text-dark-300 transition-colors hover:border-gold-600 hover:text-gold-400"
               >
                 {c.name}
