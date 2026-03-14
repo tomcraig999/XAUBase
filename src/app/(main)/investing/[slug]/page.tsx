@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import PhysicalVsPaperGold, { physicalVsPaperGoldMeta } from "./PhysicalVsPaperGold";
 import WhyInvestInGold, { whyInvestInGoldMeta } from "./WhyInvestInGold";
+import HowToBuyGold, { howToBuyGoldMeta } from "./HowToBuyGold";
 
 const GUIDES: Record<string, { title: string; content: string; customComponent?: boolean }> = {
   "why-invest-in-gold": {
@@ -11,18 +12,9 @@ const GUIDES: Record<string, { title: string; content: string; customComponent?:
     customComponent: true,
   },
   "how-to-buy-gold": {
-    title: "How to Buy Gold",
-    content: `Buying gold is straightforward once you understand the options available. This guide covers the main ways to purchase gold.
-
-Gold coins are popular among collectors and investors. Common investment coins include the American Gold Eagle, Canadian Gold Maple Leaf, South African Krugerrand, and Austrian Gold Philharmonic. These coins carry a small premium over the spot gold price.
-
-Gold bars (or ingots) are available from 1 gram to 400 ounces. Larger bars typically have lower premiums per ounce. LBMA-approved bars from refiners like PAMP Suisse, Valcambi, and the Royal Canadian Mint are the most widely traded.
-
-When buying gold, always purchase from reputable dealers. Check our dealer directory for trusted sellers worldwide. Look for dealers who are members of industry organizations and have verifiable track records.
-
-Compare premiums over spot price between dealers. Premiums vary based on product type, quantity, and market conditions. Online dealers often offer lower premiums than local shops due to lower overhead.
-
-Consider storage before purchasing. Options include home storage in a safe, bank safe deposit boxes, or professional vault storage offered by many dealers.`,
+    title: howToBuyGoldMeta.title,
+    content: "",
+    customComponent: true,
   },
   "gold-ira": {
     title: "Gold IRA Guide",
@@ -104,6 +96,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
+  if (slug === "how-to-buy-gold") {
+    return {
+      title: howToBuyGoldMeta.title,
+      description: howToBuyGoldMeta.description,
+      alternates: {
+        canonical: "https://www.xaubase.com/investing/how-to-buy-gold",
+      },
+    };
+  }
+
   return {
     title: guide.title,
     description: guide.content.slice(0, 160),
@@ -139,6 +141,8 @@ export default async function GuidePage({ params }: Props) {
             <PhysicalVsPaperGold />
           ) : guide.customComponent && slug === "why-invest-in-gold" ? (
             <WhyInvestInGold />
+          ) : guide.customComponent && slug === "how-to-buy-gold" ? (
+            <HowToBuyGold />
           ) : (
             paragraphs.map((p, i) => (
               <p key={i} className="leading-relaxed text-dark-300">{p}</p>
