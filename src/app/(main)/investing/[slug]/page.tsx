@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import PhysicalVsPaperGold, { physicalVsPaperGoldMeta } from "./PhysicalVsPaperGold";
 
-const GUIDES: Record<string, { title: string; content: string }> = {
+const GUIDES: Record<string, { title: string; content: string; customComponent?: boolean }> = {
   "why-invest-in-gold": {
     title: "Why Invest in Gold?",
     content: `Gold has been valued by civilizations for thousands of years and remains one of the most important investment assets today. Here are the key reasons investors allocate a portion of their portfolio to gold.
@@ -46,18 +47,9 @@ You can fund a Gold IRA through a rollover from an existing 401(k), traditional 
 Contribution limits for Gold IRAs follow standard IRA limits. Be aware of fees including setup fees, annual custodian fees, and storage fees which vary by provider.`,
   },
   "physical-vs-paper-gold": {
-    title: "Physical Gold vs Paper Gold",
-    content: `Understanding the difference between physical and paper gold is crucial for making informed investment decisions.
-
-Physical gold includes coins, bars, and rounds that you can hold in your hand. It has no counterparty risk, provides direct ownership, and can be stored privately. However, it requires secure storage, insurance, and has higher transaction costs.
-
-Gold ETFs (like GLD and IAU) track the gold price and trade on stock exchanges like regular stocks. They offer high liquidity, low transaction costs, and easy portfolio integration. However, you don't own physical gold - you own shares in a trust that holds gold.
-
-Gold futures and options allow leveraged exposure to gold price movements. These are complex instruments best suited for experienced traders and institutions.
-
-Gold mining stocks offer leveraged exposure to gold prices through the operations of mining companies. They can provide dividends and growth potential but carry company-specific risks.
-
-For most individual investors, a combination of physical gold for long-term wealth preservation and gold ETFs for trading flexibility provides the best balance.`,
+    title: physicalVsPaperGoldMeta.title,
+    content: "", // rendered by dedicated component
+    customComponent: true,
   },
   "gold-storage": {
     title: "Gold Storage Options",
@@ -99,6 +91,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const guide = GUIDES[slug];
   if (!guide) return { title: "Guide Not Found" };
+
+  if (slug === "physical-vs-paper-gold") {
+    return {
+      title: physicalVsPaperGoldMeta.title,
+      description: physicalVsPaperGoldMeta.description,
+      alternates: {
+        canonical: "https://www.xaubase.com/investing/physical-vs-paper-gold",
+      },
+    };
+  }
+
   return {
     title: guide.title,
     description: guide.content.slice(0, 160),
@@ -121,7 +124,7 @@ export default async function GuidePage({ params }: Props) {
   const paragraphs = guide.content.split("\n\n");
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
+    <div className={`mx-auto px-4 py-8 sm:px-6 lg:px-8 ${guide.customComponent ? "max-w-4xl" : "max-w-3xl"}`}>
       <Link href="/investing" className="mb-6 inline-flex items-center gap-1 text-sm text-dark-400 hover:text-gold-400">
         <ArrowLeft className="h-4 w-4" />
         All Guides
@@ -130,9 +133,13 @@ export default async function GuidePage({ params }: Props) {
       <article>
         <h1 className="font-display text-3xl font-bold text-foreground">{guide.title}</h1>
         <div className="mt-8 space-y-4">
-          {paragraphs.map((p, i) => (
-            <p key={i} className="leading-relaxed text-dark-300">{p}</p>
-          ))}
+          {guide.customComponent && slug === "physical-vs-paper-gold" ? (
+            <PhysicalVsPaperGold />
+          ) : (
+            paragraphs.map((p, i) => (
+              <p key={i} className="leading-relaxed text-dark-300">{p}</p>
+            ))
+          )}
         </div>
       </article>
 
