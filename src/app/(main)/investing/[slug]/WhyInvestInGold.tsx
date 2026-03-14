@@ -85,7 +85,7 @@ function SchemaMarkup() {
         name: "Does gold actually beat inflation?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Yes, over the long term. In 1971, gold was $35 per ounce. By 2026, it trades above $2,900 — a return of over 8,000%, far outpacing cumulative US inflation of approximately 700% over the same period. However, gold does not beat inflation every single year. There have been extended periods (1980-2000) where gold underperformed. Gold is most effective as an inflation hedge when held as a permanent portfolio allocation over decades, not as a short-term inflation trade.",
+          text: "Yes, over the long term. In 1971, gold was $35 per ounce. By 2026, it trades above $5,000 — a return of over 14,000%, far outpacing cumulative US inflation of approximately 700% over the same period. However, gold does not beat inflation every single year. There have been extended periods (1980-2000) where gold underperformed. Gold is most effective as an inflation hedge when held as a permanent portfolio allocation over decades, not as a short-term inflation trade.",
         },
       },
       {
@@ -268,7 +268,7 @@ export default function WhyInvestInGold() {
       </p>
       <p className={prose}>
         In 2024, central banks purchased over 1,000 tonnes of gold for the fourth consecutive year.
-        The gold price surged past $2,900 per ounce in early 2025, reaching new all-time highs. Yet
+        The gold price surged past $5,000 per ounce in 2026, reaching new all-time highs. Yet
         most individual investors hold little or no gold — a gap that represents both a risk and an
         opportunity.
       </p>
@@ -288,7 +288,7 @@ export default function WhyInvestInGold() {
       <p className={prose}>
         Gold&apos;s most celebrated role is as a hedge against inflation. When the purchasing power
         of paper currencies declines, gold tends to rise. In 1971, gold was $35 per ounce. By 2026,
-        it trades above $2,900 — a return of over 8,000%, far outpacing cumulative US inflation of
+        it trades above $5,000 — a return of over 14,000%, far outpacing cumulative US inflation of
         approximately 700% over the same period.
       </p>
       <p className={prose}>
@@ -859,7 +859,7 @@ export default function WhyInvestInGold() {
           },
           {
             q: "Does gold actually beat inflation?",
-            a: "Yes, over the long term. Gold has risen from $35/oz in 1971 to over $2,900 in 2026 — an 8,000%+ return vs ~700% cumulative US inflation. However, gold doesn't beat inflation every year. It's most effective as a permanent allocation held over decades, not a short-term inflation trade.",
+            a: "Yes, over the long term. Gold has risen from $35/oz in 1971 to over $5,000 in 2026 — a 14,000%+ return vs ~700% cumulative US inflation. However, gold doesn't beat inflation every year. It's most effective as a permanent allocation held over decades, not a short-term inflation trade.",
           },
           {
             q: "Should I buy physical gold or gold ETFs?",
