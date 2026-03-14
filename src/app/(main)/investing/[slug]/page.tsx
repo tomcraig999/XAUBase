@@ -2,21 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import PhysicalVsPaperGold, { physicalVsPaperGoldMeta } from "./PhysicalVsPaperGold";
+import WhyInvestInGold, { whyInvestInGoldMeta } from "./WhyInvestInGold";
 
 const GUIDES: Record<string, { title: string; content: string; customComponent?: boolean }> = {
   "why-invest-in-gold": {
-    title: "Why Invest in Gold?",
-    content: `Gold has been valued by civilizations for thousands of years and remains one of the most important investment assets today. Here are the key reasons investors allocate a portion of their portfolio to gold.
-
-Gold serves as an effective hedge against inflation. When the purchasing power of fiat currencies declines, gold tends to maintain or increase its value. Historical data shows that gold has outpaced inflation over long periods.
-
-Gold provides portfolio diversification because it has a low correlation with stocks and bonds. During market downturns, gold often moves independently or inversely to equities, helping to reduce overall portfolio volatility.
-
-Central banks worldwide hold gold as part of their reserves, with purchases reaching record levels in recent years. This institutional demand provides a strong floor for gold prices.
-
-Gold is a universally recognized store of value with no counterparty risk. Unlike stocks, bonds, or bank deposits, physical gold does not depend on any institution's promise to pay.
-
-Most financial advisors recommend allocating 5-15% of your portfolio to gold and precious metals as a form of insurance against economic uncertainty.`,
+    title: whyInvestInGoldMeta.title,
+    content: "",
+    customComponent: true,
   },
   "how-to-buy-gold": {
     title: "How to Buy Gold",
@@ -102,6 +94,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
+  if (slug === "why-invest-in-gold") {
+    return {
+      title: whyInvestInGoldMeta.title,
+      description: whyInvestInGoldMeta.description,
+      alternates: {
+        canonical: "https://www.xaubase.com/investing/why-invest-in-gold",
+      },
+    };
+  }
+
   return {
     title: guide.title,
     description: guide.content.slice(0, 160),
@@ -135,6 +137,8 @@ export default async function GuidePage({ params }: Props) {
         <div className="mt-8 space-y-4">
           {guide.customComponent && slug === "physical-vs-paper-gold" ? (
             <PhysicalVsPaperGold />
+          ) : guide.customComponent && slug === "why-invest-in-gold" ? (
+            <WhyInvestInGold />
           ) : (
             paragraphs.map((p, i) => (
               <p key={i} className="leading-relaxed text-dark-300">{p}</p>
