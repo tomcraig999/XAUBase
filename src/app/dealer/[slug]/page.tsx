@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, Globe, MapPin, Phone, Mail, Star, ExternalLink } from "lucide-react";
+import { ArrowLeft, Globe, MapPin, Phone, Mail, Star, ExternalLink, BadgeCheck } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { SPECIALIZATION_LABELS, SITE_URL } from "@/lib/utils/constants";
 import Header from "@/components/layout/Header";
@@ -112,26 +112,42 @@ export default async function DealerPage({ params }: Props) {
           {/* Dealer Header */}
           <div className="rounded-lg border border-border bg-card p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h1 className="font-display text-3xl font-bold text-foreground">
-                  {dealer.name}
-                </h1>
-                <div className="mt-2 flex items-center gap-4 text-sm text-dark-400">
-                  <span className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
-                    {location}
-                  </span>
-                  {dealer.online_sales && (
-                    <span className="flex items-center gap-1 text-gold-500">
-                      <Globe className="h-4 w-4" />
-                      Online Sales
+              <div className="flex items-start gap-4">
+                {dealer.logo_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={dealer.logo_url}
+                    alt={`${dealer.name} logo`}
+                    className="h-16 w-16 shrink-0 rounded-md border border-border bg-white object-contain p-1"
+                  />
+                )}
+                <div>
+                  <h1 className="font-display text-3xl font-bold text-foreground">
+                    {dealer.name}
+                  </h1>
+                  {dealer.owner_id && (
+                    <span className="mt-1 inline-flex items-center gap-1 text-xs text-green-400">
+                      <BadgeCheck className="h-4 w-4" />
+                      Verified business
                     </span>
                   )}
-                </div>
-                <div className="mt-2 flex items-center gap-1">
-                  <Star className="h-4 w-4 fill-gold-400 text-gold-400" />
-                  <span className="font-medium text-gold-400">{dealer.rating_avg}</span>
-                  <span className="text-dark-400">({dealer.review_count} reviews)</span>
+                  <div className="mt-2 flex items-center gap-4 text-sm text-dark-400">
+                    <span className="flex items-center gap-1">
+                      <MapPin className="h-4 w-4" />
+                      {location}
+                    </span>
+                    {dealer.online_sales && (
+                      <span className="flex items-center gap-1 text-gold-500">
+                        <Globe className="h-4 w-4" />
+                        Online Sales
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-2 flex items-center gap-1">
+                    <Star className="h-4 w-4 fill-gold-400 text-gold-400" />
+                    <span className="font-medium text-gold-400">{dealer.rating_avg}</span>
+                    <span className="text-dark-400">({dealer.review_count} reviews)</span>
+                  </div>
                 </div>
               </div>
               {dealer.website && (
@@ -200,6 +216,32 @@ export default async function DealerPage({ params }: Props) {
               )}
             </div>
           </div>
+
+          {/* Ownership */}
+          {!dealer.owner_id && (
+            <div className="mt-6 flex flex-col gap-3 rounded-lg border border-dashed border-border p-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-medium text-foreground">Is this your business?</p>
+                <p className="mt-1 text-xs text-dark-400">
+                  Claim this listing to update your details, description and logo.
+                </p>
+              </div>
+              <Link
+                href={`/claim/${dealer.slug}`}
+                className="inline-flex shrink-0 items-center justify-center rounded-md border border-gold-600 px-4 py-2 text-sm font-medium text-gold-400 hover:bg-gold-900/30"
+              >
+                Claim this listing
+              </Link>
+            </div>
+          )}
+          {user && dealer.owner_id === user.id && (
+            <div className="mt-6 rounded-lg border border-border p-4 text-sm text-dark-300">
+              You manage this listing.{" "}
+              <Link href={`/dashboard/listings/${dealer.id}`} className="text-gold-500 hover:text-gold-400">
+                Edit it →
+              </Link>
+            </div>
+          )}
 
           {/* Reviews placeholder */}
           <div className="mt-6 rounded-lg border border-border bg-card p-6">
