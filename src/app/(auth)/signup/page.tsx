@@ -1,19 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Logo from "@/components/ui/Logo";
+import { safeNext } from "@/lib/utils/safe-next";
 
 export default function SignUpPage() {
+  return (
+    <Suspense>
+      <SignUpForm />
+    </Suspense>
+  );
+}
+
+function SignUpForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const router = useRouter();
+  const next = safeNext(useSearchParams().get("next"));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +35,7 @@ export default function SignUpPage() {
       password,
       options: {
         data: { full_name: fullName },
+        emailRedirectTo: `${window.location.origin}/callback?next=${encodeURIComponent(next)}`,
       },
     });
 

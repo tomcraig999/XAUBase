@@ -1,6 +1,7 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type DealerStatus = "pending" | "approved" | "rejected";
+export type RequestStatus = "pending" | "approved" | "rejected";
 export type StockCategory =
   | "senior_producer"
   | "mid_cap_producer"
@@ -38,6 +39,7 @@ export interface Database {
           region?: string;
           created_at?: string;
         };
+        Relationships: [];
       };
       cities: {
         Row: {
@@ -70,6 +72,7 @@ export interface Database {
           lng?: number | null;
           created_at?: string;
         };
+        Relationships: [];
       };
       profiles: {
         Row: {
@@ -99,6 +102,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       dealers: {
         Row: {
@@ -120,6 +124,9 @@ export interface Database {
           status: DealerStatus;
           submitted_by: string | null;
           address_line: string | null;
+          owner_id: string | null;
+          requested_city: string | null;
+          admin_note: string | null;
           rating_avg: number;
           review_count: number;
           created_at: string;
@@ -144,6 +151,9 @@ export interface Database {
           status?: DealerStatus;
           submitted_by?: string | null;
           address_line?: string | null;
+          owner_id?: string | null;
+          requested_city?: string | null;
+          admin_note?: string | null;
           rating_avg?: number;
           review_count?: number;
           created_at?: string;
@@ -168,11 +178,15 @@ export interface Database {
           status?: DealerStatus;
           submitted_by?: string | null;
           address_line?: string | null;
+          owner_id?: string | null;
+          requested_city?: string | null;
+          admin_note?: string | null;
           rating_avg?: number;
           review_count?: number;
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       dealer_reviews: {
         Row: {
@@ -199,6 +213,88 @@ export interface Database {
           review_text?: string | null;
           created_at?: string;
         };
+        Relationships: [];
+      };
+      dealer_claims: {
+        Row: {
+          id: string;
+          dealer_id: string;
+          user_id: string;
+          user_email: string;
+          message: string | null;
+          status: RequestStatus;
+          auto_verified: boolean;
+          admin_note: string | null;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          dealer_id: string;
+          user_id: string;
+          user_email: string;
+          message?: string | null;
+          status?: RequestStatus;
+          auto_verified?: boolean;
+          admin_note?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          dealer_id?: string;
+          user_id?: string;
+          user_email?: string;
+          message?: string | null;
+          status?: RequestStatus;
+          auto_verified?: boolean;
+          admin_note?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      dealer_change_requests: {
+        Row: {
+          id: string;
+          dealer_id: string;
+          user_id: string;
+          changes: Json;
+          status: RequestStatus;
+          admin_note: string | null;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          dealer_id: string;
+          user_id: string;
+          changes: Json;
+          status?: RequestStatus;
+          admin_note?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          dealer_id?: string;
+          user_id?: string;
+          changes?: Json;
+          status?: RequestStatus;
+          admin_note?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       gold_stocks: {
         Row: {
@@ -246,6 +342,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       gold_prices_cache: {
         Row: {
@@ -293,6 +390,7 @@ export interface Database {
           timestamp?: string;
           created_at?: string;
         };
+        Relationships: [];
       };
       gold_prices_history: {
         Row: {
@@ -316,6 +414,7 @@ export interface Database {
           price?: number;
           date?: string;
         };
+        Relationships: [];
       };
       news_articles: {
         Row: {
@@ -351,12 +450,24 @@ export interface Database {
           summary?: string | null;
           fetched_at?: string;
         };
+        Relationships: [];
       };
     };
-    Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Views: { [_ in never]: never };
+    Functions: {
+      is_admin: { Args: Record<string, never>; Returns: boolean };
+      submit_dealer: { Args: { p: Json }; Returns: string };
+      update_my_dealer: { Args: { p_dealer_id: string; p: Json }; Returns: "saved" | "pending_review" | "no_changes" };
+      withdraw_my_change_request: { Args: { p_dealer_id: string }; Returns: undefined };
+      claim_dealer: { Args: { p_dealer_id: string; p_message?: string | null }; Returns: "approved" | "pending" };
+      admin_review_dealer: { Args: { p_dealer_id: string; p_approve: boolean; p_note?: string | null }; Returns: undefined };
+      admin_review_claim: { Args: { p_claim_id: string; p_approve: boolean; p_note?: string | null }; Returns: undefined };
+      admin_review_change: { Args: { p_request_id: string; p_approve: boolean; p_note?: string | null }; Returns: undefined };
+      admin_user_emails: { Args: { p_ids: string[] }; Returns: { id: string; email: string }[] };
+    };
     Enums: {
       dealer_status: DealerStatus;
+      request_status: RequestStatus;
       stock_category: StockCategory;
     };
   };

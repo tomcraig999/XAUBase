@@ -15,6 +15,8 @@ export interface DealerWithLocation {
   rating_avg: number;
   review_count: number;
   featured: boolean;
+  logo_url: string | null;
+  owner_id: string | null;
   city: { name: string; slug: string; state_province: string | null } | null;
   country: { name: string; slug: string } | null;
 }
@@ -47,7 +49,7 @@ interface CountryInfo {
 
 const DEALER_SELECT = `
   id, name, slug, website, phone, email, description, specializations,
-  online_sales, address_line, rating_avg, review_count, featured,
+  online_sales, address_line, rating_avg, review_count, featured, logo_url, owner_id,
   city:cities(name, slug, state_province),
   country:countries(name, slug)
 ` as const;
