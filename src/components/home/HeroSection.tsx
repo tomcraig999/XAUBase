@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { Search, TrendingUp, Building2, Newspaper } from "lucide-react";
+import { getSiteStats } from "@/lib/supabase/queries";
 
-export default function HeroSection() {
+export default async function HeroSection() {
+  // Live counts from the database, so the hero never goes stale
+  const stats = await getSiteStats();
+
   return (
     <section className="relative overflow-hidden border-b border-border bg-gradient-to-b from-dark-900 to-background">
       {/* Subtle gold gradient overlay */}
@@ -36,7 +40,9 @@ export default function HeroSection() {
               className="rounded-lg border border-border bg-card p-4 transition-colors hover:border-gold-600"
             >
               <Building2 className="mx-auto h-6 w-6 text-gold-500" />
-              <p className="mt-2 text-2xl font-bold text-foreground">100+</p>
+              <p className="mt-2 text-2xl font-bold text-foreground">
+                {stats ? stats.dealerCount.toLocaleString("en-US") : "200+"}
+              </p>
               <p className="text-xs text-dark-400">Gold Dealers</p>
             </Link>
             <Link
@@ -53,8 +59,10 @@ export default function HeroSection() {
                 <path d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
                 <circle cx="12" cy="12" r="10" />
               </svg>
-              <p className="mt-2 text-2xl font-bold text-foreground">11</p>
-              <p className="text-xs text-dark-400">Countries</p>
+              <p className="mt-2 text-2xl font-bold text-foreground">
+                {stats ? stats.countryCount : "90+"}
+              </p>
+              <p className="text-xs text-dark-400">Countries Covered</p>
             </Link>
             <Link
               href="/stocks"

@@ -1,19 +1,12 @@
 import Link from "next/link";
 import { getCountriesWithCounts } from "@/lib/supabase/queries";
 
-const COUNTRY_FLAGS: Record<string, string> = {
-  US: "\uD83C\uDDFA\uD83C\uDDF8",
-  GB: "\uD83C\uDDEC\uD83C\uDDE7",
-  CA: "\uD83C\uDDE8\uD83C\uDDE6",
-  AU: "\uD83C\uDDE6\uD83C\uDDFA",
-  DE: "\uD83C\uDDE9\uD83C\uDDEA",
-  CH: "\uD83C\uDDE8\uD83C\uDDED",
-  AE: "\uD83C\uDDE6\uD83C\uDDEA",
-  SG: "\uD83C\uDDF8\uD83C\uDDEC",
-  HK: "\uD83C\uDDED\uD83C\uDDF0",
-  IN: "\uD83C\uDDEE\uD83C\uDDF3",
-  ZA: "\uD83C\uDDFF\uD83C\uDDE6",
-};
+// Flag emoji from an ISO 3166 alpha-2 code (e.g. "GB" -> regional indicators G + B)
+function countryFlag(code: string): string {
+  const cc = code.trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(cc)) return "\uD83C\uDF0D";
+  return String.fromCodePoint(...Array.from(cc).map((c) => 0x1f1e6 + c.charCodeAt(0) - 65));
+}
 
 export default async function CountryLinks() {
   const countries = await getCountriesWithCounts();
@@ -38,7 +31,7 @@ export default async function CountryLinks() {
               className="rounded-lg border border-border bg-card p-4 text-center transition-colors hover:border-gold-600/50 hover:bg-card-hover"
             >
               <span className="text-2xl">
-                {COUNTRY_FLAGS[country.code] || "\uD83C\uDF0D"}
+                {countryFlag(country.code)}
               </span>
               <p className="mt-2 text-sm font-medium text-foreground">
                 {country.name}
