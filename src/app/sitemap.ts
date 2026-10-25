@@ -1,6 +1,6 @@
 import { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/utils/constants";
-import { getAllCitySlugs, getAllDealerSlugs } from "@/lib/supabase/queries";
+import { getAllCitySlugs, getAllCountrySlugs, getAllDealerSlugs } from "@/lib/supabase/queries";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = SITE_URL;
@@ -14,14 +14,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/investing`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.7 },
   ];
 
-  // Country pages
-  const countries = [
-    "united-states", "united-kingdom", "canada", "australia",
-    "ireland", "france", "germany", "austria", "spain",
-    "portugal", "switzerland", "italy", "belgium",
-    "uae", "singapore", "hong-kong", "india", "south-africa",
-    "cayman-islands", "argentina", "brazil", "new-zealand", "thailand",
-  ];
+  // Country pages: every country with at least one city page
+  const countries = await getAllCountrySlugs();
 
   const countryPages: MetadataRoute.Sitemap = countries.map((slug) => ({
     url: `${baseUrl}/dealers/${slug}`,

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getDealersByCountry } from "@/lib/supabase/queries";
 import DealerCard from "@/components/dealers/DealerCard";
@@ -15,7 +16,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const countryName = data?.countryName || country.replace(/-/g, " ");
 
   return {
-    title: `Gold Dealers in ${countryName} | XAUBase`,
+    title: `Gold Dealers in ${countryName}`,
     description: `Browse ${data?.dealers.length || ""} trusted gold dealers in ${countryName}. Find gold coin dealers, bullion dealers, and precious metals shops.`,
     alternates: {
       canonical: `${SITE_URL}/dealers/${country}`,
@@ -29,21 +30,9 @@ export default async function CountryDealersPage({ params }: Props) {
   const { country } = await params;
   const data = await getDealersByCountry(country);
 
-  if (!data) {
-    return (
-      <div className="mx-auto max-w-7xl px-4 py-16 text-center sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-bold text-foreground">Country Not Found</h1>
-        <p className="mt-2 text-dark-400">
-          We don&apos;t have dealers listed for this country yet.
-        </p>
-        <Link
-          href="/dealers"
-          className="mt-4 inline-block text-gold-500 hover:text-gold-400"
-        >
-          &larr; Back to Directory
-        </Link>
-      </div>
-    );
+  // Nothing to show for this country: return a real 404 rather than an empty page
+  if (!data || (data.dealers.length === 0 && data.cities.length === 0)) {
+    notFound();
   }
 
   const { dealers, countryName, cities } = data;
@@ -78,11 +67,13 @@ export default async function CountryDealersPage({ params }: Props) {
         Gold Dealers in {countryName}
       </h1>
       <p className="mt-2 text-dark-400">
-        {dealers.length} trusted gold dealers
+        {dealers.length > 0
+          ? `${dealers.length} trusted gold dealers`
+          : `Where to buy and sell gold in ${countryName}: nearest gold dealers and online dealers that deliver, city by city.`}
       </p>
 
       {/* Browse by City */}
-      {cities.length > 1 && (
+      {(cities.length > 1 || (dealers.length === 0 && cities.length > 0)) && (
         <div className="mt-6">
           <h2 className="text-sm font-semibold text-dark-300">Browse by City</h2>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -92,8 +83,13 @@ export default async function CountryDealersPage({ params }: Props) {
                 href={`/dealers/${country}/${c.slug}`}
                 className="rounded-full border border-border px-3 py-1.5 text-sm text-dark-300 transition-colors hover:border-gold-600 hover:text-gold-400"
               >
-                {c.name}{c.state_province ? `, ${c.state_province}` : ""}{" "}
-                <span className="text-dark-500">({c.dealer_count})</span>
+                {c.name}{c.state_province ? `, ${c.state_province}` : ""}
+                {c.dealer_count > 0 && (
+                  <>
+                    {" "}
+                    <span className="text-dark-500">({c.dealer_count})</span>
+                  </>
+                )}
               </Link>
             ))}
           </div>

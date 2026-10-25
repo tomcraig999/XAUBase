@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { getDealersByCity } from "@/lib/supabase/queries";
+import { notFound } from "next/navigation";
+import { ArrowLeft, Globe, MapPin } from "lucide-react";
+import { getDealersByCity, type LinkedDealer } from "@/lib/supabase/queries";
 import DealerCard from "@/components/dealers/DealerCard";
 import { SITE_URL } from "@/lib/utils/constants";
 
@@ -9,19 +10,57 @@ interface Props {
   params: Promise<{ country: string; city: string }>;
 }
 
+// US and UK readers think in miles; everyone else in kilometres
+function formatDistance(km: number | null, country: string): string {
+  if (km === null) return "";
+  if (country === "united-states" || country === "united-kingdom") {
+    return `${Math.max(1, Math.round(km * 0.621371))} miles`;
+  }
+  return `${Math.max(1, km)} km`;
+}
+
+// "A", "A and B", "A, B and C"
+function joinNames(names: string[]): string {
+  const unique = Array.from(new Set(names));
+  if (unique.length <= 1) return unique[0] || "";
+  return `${unique.slice(0, -1).join(", ")} and ${unique[unique.length - 1]}`;
+}
+
+function nearbySummary(nearby: LinkedDealer[], country: string): string {
+  const first = nearby[0];
+  if (!first) return "";
+  const where = first.city?.name ? ` in ${first.city.name}` : "";
+  return `${first.name}${where}, about ${formatDistance(first.distance_km, country)} away`;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { country, city } = await params;
   const data = await getDealersByCity(country, city);
 
-  if (!data) {
-    return { title: "City Not Found" };
+  if (!data || (data.dealers.length === 0 && data.nearby.length === 0 && data.online.length === 0)) {
+    return { title: "City Not Found", robots: { index: false } };
   }
 
-  const { cityName, stateProv, countryName, dealers } = data;
-  const location = stateProv ? `${cityName}, ${stateProv}` : `${cityName}, ${countryName}`;
+  const { cityName, stateProv, countryName, dealers, nearby, online } = data;
+  const region = stateProv && stateProv !== cityName ? stateProv : null;
+  const location = region ? `${cityName}, ${region}` : `${cityName}, ${countryName}`;
+
+  if (dealers.length === 0) {
+    const nearest = nearby[0];
+    const description = nearest
+      ? `Where to buy and sell gold in ${location}: the nearest gold dealers are in ${nearest.city?.name ?? "the region"}, about ${formatDistance(nearest.distance_km, country)} away${online.length > 0 ? `, plus online gold dealers that deliver to ${cityName}` : ""}.`
+      : `Where to buy gold in ${location}: online gold dealers that deliver gold coins and bars to ${cityName}, and how to sell gold locally.`;
+    return {
+      title: `Gold Dealers in ${location} - Buy Gold & Silver`,
+      description,
+      alternates: {
+        canonical: `${SITE_URL}/dealers/${country}/${city}`,
+      },
+    };
+  }
 
   return {
-    title: `Gold Dealers in ${location} - Buy Gold & Silver | XAUBase`,
+    title: `Gold Dealers in ${location} - Buy Gold & Silver`,
     description: `Find ${dealers.length} trusted gold dealers in ${location}. Compare local gold coin dealers, bullion shops, and precious metals dealers near you.`,
     alternates: {
       canonical: `${SITE_URL}/dealers/${country}/${city}`,
@@ -131,31 +170,54 @@ export default async function CityDealersPage({ params }: Props) {
   const { country, city } = await params;
   const data = await getDealersByCity(country, city);
 
-  if (!data || data.dealers.length === 0) {
-    return (
-      <div className="mx-auto max-w-7xl px-4 py-16 text-center sm:px-6 lg:px-8">
-        <h1 className="text-2xl font-bold text-foreground">City Not Found</h1>
-        <p className="mt-2 text-dark-400">
-          We don&apos;t have dealers listed for this city yet.
-        </p>
-        <Link
-          href={`/dealers/${country}`}
-          className="mt-4 inline-block text-gold-500 hover:text-gold-400"
-        >
-          &larr; Back to Country Directory
-        </Link>
-      </div>
-    );
+  // No local, nearby or online dealers: return a real 404 rather than an empty page
+  if (!data || (data.dealers.length === 0 && data.nearby.length === 0 && data.online.length === 0)) {
+    notFound();
   }
 
-  const { dealers, cityName, stateProv, countryName } = data;
-  const location = stateProv ? `${cityName}, ${stateProv}` : cityName;
-  const fullLocation = stateProv
-    ? `${cityName}, ${stateProv}, ${countryName}`
+  const { dealers, nearby, online, cityName, stateProv, countryName } = data;
+  const region = stateProv && stateProv !== cityName ? stateProv : null;
+  const location = region ? `${cityName}, ${region}` : cityName;
+  const fullLocation = region
+    ? `${cityName}, ${region}, ${countryName}`
     : `${cityName}, ${countryName}`;
 
+  // Cities with no local dealer show the nearest dealers and online dealers that deliver there
+  const isLinkPage = dealers.length === 0;
+  const listedDealers = isLinkPage ? [...nearby, ...online] : dealers;
+  const nearbyCities = joinNames(nearby.map((d) => d.city?.name).filter((n): n is string => Boolean(n)));
+  const onlineNames = joinNames(online.map((d) => d.name));
+  const deliversFromAbroad = online.some((d) => d.country?.name && d.country.name !== countryName);
+
+  const linkPageFaqs = [
+    {
+      q: `Where can I buy gold in ${cityName}?`,
+      a: nearby.length > 0
+        ? `XAUBase doesn't list a gold dealer inside ${cityName} yet. The nearest is ${nearbySummary(nearby, country)}${nearby.length > 1 ? `, with more gold dealers in ${nearbyCities}` : ""}.${online.length > 0 ? ` You can also buy gold coins and bars online from ${onlineNames}, which ${online.length > 1 ? "deliver" : "delivers"} to ${cityName}.` : ""}`
+        : `XAUBase doesn't list a gold dealer in or near ${cityName} yet. You can buy gold coins and bars online from ${onlineNames}, which ${online.length > 1 ? "deliver" : "delivers"} to ${cityName}.`,
+    },
+    {
+      q: `Where can I sell gold in ${cityName}?`,
+      a: nearby.length > 0
+        ? `Most gold dealers buy gold as well as sell it. The nearest dealers to ${cityName}, in ${nearbyCities}, buy gold coins, bars and often jewellery and scrap, at prices based on the spot price of gold. Call ahead for their current buy price before you travel.`
+        : `There's no gold dealer listed near ${cityName}, so local jewellers are usually the only in-person buyers for gold jewellery and scrap. If you bought coins or bars online, check whether the dealer runs a buyback service, and compare any offer against the live gold price on XAUBase.`,
+    },
+    {
+      q: `What types of gold can I buy in ${cityName}?`,
+      a: `Gold dealers serving ${location} sell gold bullion bars, gold coins (such as Britannias, Sovereigns, American Eagles, Canadian Maple Leafs and Krugerrands) and, at some dealers, numismatic or collectible coins. Many also sell silver, platinum and palladium.`,
+    },
+    ...(online.length > 0
+      ? [
+          {
+            q: `Can I buy gold online with delivery to ${cityName}?`,
+            a: `Yes. ${onlineNames} ${online.length > 1 ? "deliver" : "delivers"} gold coins and bars to ${cityName}.${deliversFromAbroad ? ` Gold shipped from abroad may be charged import duty or local taxes on arrival, which the buyer pays, so check the rules for ${countryName} before you order.` : ""}`,
+          },
+        ]
+      : []),
+  ];
+
   // FAQ data for structured data and display
-  const faqs = [
+  const faqs = isLinkPage ? linkPageFaqs : [
     {
       q: `Where can I buy gold in ${cityName}?`,
       a: `There are ${dealers.length} trusted gold dealers in ${location}. You can buy gold coins, gold bars, and bullion from local dealers listed on XAUBase. Many dealers also offer online purchasing with delivery to ${cityName}.`,
@@ -207,12 +269,14 @@ export default async function CityDealersPage({ params }: Props) {
       {
         "@type": "CollectionPage",
         name: `Gold Dealers in ${location}`,
-        description: `Find ${dealers.length} trusted gold dealers in ${fullLocation}`,
+        description: isLinkPage
+          ? `Where to buy and sell gold in ${fullLocation}: the nearest gold dealers and online dealers that deliver to ${cityName}`
+          : `Find ${dealers.length} trusted gold dealers in ${fullLocation}`,
         url: `${SITE_URL}/dealers/${country}/${city}`,
-        numberOfItems: dealers.length,
+        numberOfItems: listedDealers.length,
       },
       // LocalBusiness for each dealer
-      ...dealers.map((d) => ({
+      ...listedDealers.map((d) => ({
         "@type": "LocalBusiness",
         "@id": `${SITE_URL}/dealer/${d.slug}`,
         name: d.name,
@@ -276,36 +340,126 @@ export default async function CityDealersPage({ params }: Props) {
       <h1 className="font-display text-3xl font-bold text-foreground">
         Gold Dealers in {location}
       </h1>
-      <p className="mt-2 text-dark-400">
-        Find trusted gold dealers, coin shops, and bullion dealers in{" "}
-        {fullLocation}. Compare prices, read reviews, and buy gold with
-        confidence.
-      </p>
+      {isLinkPage ? (
+        <>
+          <p className="mt-2 text-dark-400">
+            Looking to buy or sell gold in {fullLocation}? XAUBase doesn&apos;t
+            list a gold dealer inside {cityName} yet, so here are{" "}
+            {nearby.length > 0 && online.length > 0
+              ? `the nearest gold dealers to ${cityName} and online gold dealers that deliver there.`
+              : nearby.length > 0
+                ? `the nearest gold dealers to ${cityName}.`
+                : `online gold dealers that deliver gold coins and bars to ${cityName}.`}
+          </p>
 
-      {/* Dealer count badge */}
-      <div className="mt-4">
-        <span className="inline-flex items-center rounded-full border border-gold-600 bg-gold-900/30 px-3 py-1 text-sm font-medium text-gold-400">
-          {dealers.length} Gold Dealer{dealers.length !== 1 ? "s" : ""}
-        </span>
-      </div>
+          {/* Summary badges */}
+          <div className="mt-4 flex flex-wrap gap-2">
+            {nearby.length > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-gold-600 bg-gold-900/30 px-3 py-1 text-sm font-medium text-gold-400">
+                <MapPin className="h-3.5 w-3.5" />
+                Nearest dealer {formatDistance(nearby[0].distance_km, country)} away
+              </span>
+            )}
+            {online.length > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-gold-600 bg-gold-900/30 px-3 py-1 text-sm font-medium text-gold-400">
+                <Globe className="h-3.5 w-3.5" />
+                {online.length} online dealer{online.length !== 1 ? "s" : ""} deliver{online.length === 1 ? "s" : ""} to {cityName}
+              </span>
+            )}
+          </div>
 
-      {/* Dealer Grid */}
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {dealers.map((dealer) => (
-          <DealerCard
-            key={dealer.slug}
-            name={dealer.name}
-            slug={dealer.slug}
-            cityName={dealer.city?.name}
-            stateProv={dealer.city?.state_province}
-            countryName={dealer.country?.name}
-            specializations={dealer.specializations}
-            onlineSales={dealer.online_sales}
-            ratingAvg={dealer.rating_avg}
-            reviewCount={dealer.review_count}
-          />
-        ))}
-      </div>
+          {/* Nearest dealers */}
+          {nearby.length > 0 && (
+            <section className="mt-8">
+              <h2 className="font-display text-2xl font-bold text-foreground">
+                Nearest Gold Dealers to {cityName}
+              </h2>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {nearby.map((dealer) => (
+                  <div key={dealer.slug} className="flex flex-col gap-1.5">
+                    <DealerCard
+                      name={dealer.name}
+                      slug={dealer.slug}
+                      cityName={dealer.city?.name}
+                      stateProv={dealer.city?.state_province}
+                      countryName={dealer.country?.name}
+                      specializations={dealer.specializations}
+                      onlineSales={dealer.online_sales}
+                      ratingAvg={dealer.rating_avg}
+                      reviewCount={dealer.review_count}
+                    />
+                    <p className="px-1 text-xs text-dark-400">
+                      About {formatDistance(dealer.distance_km, country)} from {cityName}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Online dealers that deliver here */}
+          {online.length > 0 && (
+            <section className="mt-10">
+              <h2 className="font-display text-2xl font-bold text-foreground">
+                Buy Gold Online with Delivery to {cityName}
+              </h2>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {online.map((dealer) => (
+                  <div key={dealer.slug} className="flex flex-col gap-1.5">
+                    <DealerCard
+                      name={dealer.name}
+                      slug={dealer.slug}
+                      cityName={dealer.city?.name}
+                      stateProv={dealer.city?.state_province}
+                      countryName={dealer.country?.name}
+                      specializations={dealer.specializations}
+                      onlineSales={dealer.online_sales}
+                      ratingAvg={dealer.rating_avg}
+                      reviewCount={dealer.review_count}
+                    />
+                    {dealer.note && (
+                      <p className="px-1 text-xs text-dark-400">{dealer.note}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
+      ) : (
+        <>
+          <p className="mt-2 text-dark-400">
+            Find trusted gold dealers, coin shops, and bullion dealers in{" "}
+            {fullLocation}. Compare prices, read reviews, and buy gold with
+            confidence.
+          </p>
+
+          {/* Dealer count badge */}
+          <div className="mt-4">
+            <span className="inline-flex items-center rounded-full border border-gold-600 bg-gold-900/30 px-3 py-1 text-sm font-medium text-gold-400">
+              {dealers.length} Gold Dealer{dealers.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+
+          {/* Dealer Grid */}
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {dealers.map((dealer) => (
+              <DealerCard
+                key={dealer.slug}
+                name={dealer.name}
+                slug={dealer.slug}
+                cityName={dealer.city?.name}
+                stateProv={dealer.city?.state_province}
+                countryName={dealer.country?.name}
+                specializations={dealer.specializations}
+                onlineSales={dealer.online_sales}
+                ratingAvg={dealer.rating_avg}
+                reviewCount={dealer.review_count}
+              />
+            ))}
+          </div>
+        </>
+      )}
 
       {/* FAQ Section */}
       <div className="mt-12">
