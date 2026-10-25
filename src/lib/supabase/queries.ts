@@ -362,6 +362,20 @@ export async function getAllCountrySlugs(): Promise<string[]> {
   return Array.from(new Set(cities.map((c) => c.countrySlug)));
 }
 
+// Headline numbers for the home page: approved dealers, and countries with a dealer page
+export async function getSiteStats(): Promise<{ dealerCount: number; countryCount: number } | null> {
+  const supabase = await createClient();
+  if (!supabase) return null;
+
+  const [{ count }, countrySlugs] = await Promise.all([
+    supabase.from("dealers").select("id", { count: "exact", head: true }).eq("status", "approved"),
+    getAllCountrySlugs(),
+  ]);
+
+  if (!count) return null;
+  return { dealerCount: count, countryCount: countrySlugs.length };
+}
+
 // Get all dealer slugs for sitemap
 export async function getAllDealerSlugs(): Promise<string[]> {
   const supabase = await createClient();
