@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X, ChevronDown, User, LogOut } from "lucide-react";
+import { Menu, X, ChevronDown, User, LogOut, LayoutDashboard } from "lucide-react";
 import { NAV_LINKS } from "@/lib/utils/constants";
 import Logo from "@/components/ui/Logo";
 import { createClient } from "@/lib/supabase/client";
@@ -55,19 +55,23 @@ export default function Header({ user }: HeaderProps) {
               </button>
               {userMenuOpen && (
                 <div className="absolute right-0 top-full mt-1 w-48 rounded-md border border-border bg-dark-800 py-1 shadow-lg">
+                  {user.email && (
+                    <p className="truncate border-b border-border px-4 py-2 text-xs text-dark-400">{user.email}</p>
+                  )}
                   <Link
-                    href="/profile"
-                    className="block px-4 py-2 text-sm text-dark-200 hover:bg-dark-700"
+                    href="/dashboard"
+                    className="flex items-center gap-2 px-4 py-2 text-sm text-dark-200 hover:bg-dark-700"
                     onClick={() => setUserMenuOpen(false)}
                   >
-                    Profile
+                    <LayoutDashboard className="h-4 w-4" />
+                    My Listings
                   </Link>
                   <Link
                     href="/submit"
                     className="block px-4 py-2 text-sm text-dark-200 hover:bg-dark-700"
                     onClick={() => setUserMenuOpen(false)}
                   >
-                    Submit Dealer
+                    Add a Listing
                   </Link>
                   <button
                     onClick={handleSignOut}
@@ -116,11 +120,18 @@ export default function Header({ user }: HeaderProps) {
             {user ? (
               <>
                 <Link
+                  href="/dashboard"
+                  className="rounded-md px-3 py-2 text-sm text-dark-200 hover:bg-dark-800"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  My Listings
+                </Link>
+                <Link
                   href="/submit"
                   className="rounded-md px-3 py-2 text-sm text-dark-200 hover:bg-dark-800"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Submit Dealer
+                  Add a Listing
                 </Link>
                 <button
                   onClick={handleSignOut}
