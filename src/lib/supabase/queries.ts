@@ -362,6 +362,44 @@ export async function getAllCountrySlugs(): Promise<string[]> {
   return Array.from(new Set(cities.map((c) => c.countrySlug)));
 }
 
+export interface SearchableCity {
+  name: string;
+  slug: string;
+  state_province: string | null;
+  countryName: string;
+  countrySlug: string;
+}
+
+// Every city that has a dealer page (local, nearby or online dealers), for search
+export async function getSearchableCities(): Promise<SearchableCity[]> {
+  const supabase = await createClient();
+  if (!supabase) return [];
+
+  const [{ data }, pages] = await Promise.all([
+    supabase.from("cities").select("name, slug, state_province, country:countries(name, slug)"),
+    getAllCitySlugs(),
+  ]);
+
+  const withPages = new Set(pages.map((p) => `${p.countrySlug}/${p.citySlug}`));
+  const rows =
+    (data as unknown as {
+      name: string;
+      slug: string;
+      state_province: string | null;
+      country: { name: string; slug: string } | null;
+    }[]) || [];
+
+  return rows
+    .filter((c) => c.country && withPages.has(`${c.country.slug}/${c.slug}`))
+    .map((c) => ({
+      name: c.name,
+      slug: c.slug,
+      state_province: c.state_province,
+      countryName: c.country!.name,
+      countrySlug: c.country!.slug,
+    }));
+}
+
 // Headline numbers for the home page: approved dealers, and countries with a dealer page
 export async function getSiteStats(): Promise<{ dealerCount: number; countryCount: number } | null> {
   const supabase = await createClient();

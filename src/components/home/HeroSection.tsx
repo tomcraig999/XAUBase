@@ -23,15 +23,28 @@ export default async function HeroSection() {
           </p>
 
           {/* Search bar */}
-          <div className="mx-auto mt-8 max-w-xl">
-            <Link
-              href="/dealers"
-              className="flex items-center gap-3 rounded-lg border border-border bg-dark-800 px-4 py-3 text-dark-400 transition-colors hover:border-gold-600"
+          <form
+            action="/dealers"
+            method="get"
+            role="search"
+            className="mx-auto mt-8 flex max-w-xl items-center gap-2 rounded-lg border border-border bg-dark-800 py-1.5 pl-4 pr-1.5 transition-colors focus-within:border-gold-600 hover:border-gold-600"
+          >
+            <Search className="h-5 w-5 shrink-0 text-dark-400" />
+            <input
+              type="search"
+              name="q"
+              required
+              placeholder="Search gold dealers by name, city, or country..."
+              aria-label="Search gold dealers"
+              className="min-w-0 flex-1 bg-transparent py-1.5 text-foreground placeholder:text-dark-400 focus:outline-none"
+            />
+            <button
+              type="submit"
+              className="shrink-0 rounded-md bg-gold-500 px-4 py-2 text-sm font-semibold text-dark-900 transition-colors hover:bg-gold-400"
             >
-              <Search className="h-5 w-5" />
-              <span>Search gold dealers by name, city, or country...</span>
-            </Link>
-          </div>
+              Search
+            </button>
+          </form>
 
           {/* Quick stats */}
           <div className="mx-auto mt-12 grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
