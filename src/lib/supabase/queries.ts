@@ -25,6 +25,22 @@ export interface CityWithCount {
   slug: string;
   state_province: string | null;
   dealer_count: number;
+  // True when the city has no local dealers but its page lists nearby or online dealers
+  has_links?: boolean;
+}
+
+// A dealer shown on a city page that isn't located in that city
+export interface LinkedDealer extends DealerWithLocation {
+  distance_km: number | null;
+  note: string | null;
+}
+
+interface CityLinkRow {
+  kind: "nearby" | "online";
+  distance_km: number | null;
+  note: string | null;
+  sort_order: number;
+  dealer: DealerWithLocation | null;
 }
 
 interface CountryRow {
@@ -52,11 +68,48 @@ const DEALER_SELECT = `
   country:countries(name, slug)
 ` as const;
 
+// Nearest physical dealers and online dealers that deliver, for a city with no local dealers
+async function getCityLinks(
+  supabase: NonNullable<Awaited<ReturnType<typeof createClient>>>,
+  cityId: string
+): Promise<{ nearby: LinkedDealer[]; online: LinkedDealer[] }> {
+  const { data } = await supabase
+    .from("city_dealer_links")
+    .select(`kind, distance_km, note, sort_order, dealer:dealers!inner(${DEALER_SELECT}, status)`)
+    .eq("city_id", cityId)
+    .eq("active", true)
+    .eq("dealer.status", "approved")
+    .order("sort_order");
+
+  const rows = (data as unknown as CityLinkRow[]) || [];
+  const toLinked = (r: CityLinkRow): LinkedDealer | null =>
+    r.dealer ? { ...r.dealer, distance_km: r.distance_km, note: r.note } : null;
+
+  const nearby = rows
+    .filter((r) => r.kind === "nearby")
+    .map(toLinked)
+    .filter((d): d is LinkedDealer => d !== null)
+    .sort((a, b) => (a.distance_km ?? 0) - (b.distance_km ?? 0));
+  const online = rows
+    .filter((r) => r.kind === "online")
+    .map(toLinked)
+    .filter((d): d is LinkedDealer => d !== null);
+
+  return { nearby, online };
+}
+
 // Get dealers for a specific city page
 export async function getDealersByCity(
   countrySlug: string,
   citySlug: string
-): Promise<{ dealers: DealerWithLocation[]; cityName: string; stateProv: string | null; countryName: string } | null> {
+): Promise<{
+  dealers: DealerWithLocation[];
+  nearby: LinkedDealer[];
+  online: LinkedDealer[];
+  cityName: string;
+  stateProv: string | null;
+  countryName: string;
+} | null> {
   const supabase = await createClient();
   if (!supabase) return null;
 
@@ -87,8 +140,15 @@ export async function getDealersByCity(
     .order("featured", { ascending: false })
     .order("rating_avg", { ascending: false });
 
+  const localDealers = (dealers as unknown as DealerWithLocation[]) || [];
+  // Only cities without local dealers show nearby/online alternatives
+  const { nearby, online } =
+    localDealers.length === 0 ? await getCityLinks(supabase, city.id) : { nearby: [], online: [] };
+
   return {
-    dealers: (dealers as unknown as DealerWithLocation[]) || [],
+    dealers: localDealers,
+    nearby,
+    online,
     cityName: city.name,
     stateProv: city.state_province,
     countryName: country.name,
@@ -125,19 +185,33 @@ export async function getDealersByCountry(
     .eq("country_id", country.id)
     .order("name");
 
+  // Cities in this country whose pages list nearby or online dealers
+  const { data: linksRaw } = await supabase
+    .from("city_dealer_links")
+    .select("city_id, city:cities!inner(country_id)")
+    .eq("active", true)
+    .eq("city.country_id", country.id);
+  const linkedCityIds = new Set(
+    ((linksRaw as unknown as { city_id: string }[]) || []).map((l) => l.city_id)
+  );
+
   const typedDealers = (dealersRaw as unknown as DealerWithLocation[]) || [];
   const typedCities = (citiesRaw as unknown as CityRow[]) || [];
 
   // Count dealers per city
   const cities: CityWithCount[] = typedCities
-    .map((c) => ({
-      id: c.id,
-      name: c.name,
-      slug: c.slug,
-      state_province: c.state_province,
-      dealer_count: typedDealers.filter((d) => d.city?.slug === c.slug).length,
-    }))
-    .filter((c) => c.dealer_count > 0);
+    .map((c) => {
+      const dealer_count = typedDealers.filter((d) => d.city?.slug === c.slug).length;
+      return {
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+        state_province: c.state_province,
+        dealer_count,
+        has_links: dealer_count === 0 && linkedCityIds.has(c.id),
+      };
+    })
+    .filter((c) => c.dealer_count > 0 || c.has_links);
 
   return {
     dealers: typedDealers,
@@ -264,7 +338,28 @@ export async function getAllCitySlugs(): Promise<
     result.push({ citySlug: d.city.slug, countrySlug: d.country.slug });
   }
 
+  // Cities with no local dealers whose pages list nearby or online dealers
+  const { data: linksRaw } = await supabase
+    .from("city_dealer_links")
+    .select("city:cities(slug, country:countries(slug))")
+    .eq("active", true);
+
+  const links = (linksRaw as unknown as { city: { slug: string; country: { slug: string } | null } | null }[]) || [];
+  for (const l of links) {
+    if (!l.city?.slug || !l.city.country?.slug) continue;
+    const key = `${l.city.country.slug}/${l.city.slug}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push({ citySlug: l.city.slug, countrySlug: l.city.country.slug });
+  }
+
   return result;
+}
+
+// Get country slugs that have a dealer page (local dealers or linked city pages)
+export async function getAllCountrySlugs(): Promise<string[]> {
+  const cities = await getAllCitySlugs();
+  return Array.from(new Set(cities.map((c) => c.countrySlug)));
 }
 
 // Get all dealer slugs for sitemap
